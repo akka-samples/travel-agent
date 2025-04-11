@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <parent>
+    <groupId>io.akka</groupId>
+    <artifactId>akka-javasdk-parent</artifactId>
+    <version>3.2.3-23-0824b737-dev-SNAPSHOT</version>
+  </parent>
+  
+  <groupId>io.akka.example</groupId>
+  <artifactId>travel-agent</artifactId>
+  <version>1.0-SNAPSHOT</version>
+  <packaging>jar</packaging>
+
+  <name>travel-agent</name>
+
+  <properties>
+    <langchain4j.version>1.0.0-beta1</langchain4j.version>
+  </properties>
+
+  <dependencies>
+    <!-- Langchain4j Core -->
+    <dependency>
+      <groupId>dev.langchain4j</groupId>
+      <artifactId>langchain4j</artifactId>
+      <version>${langchain4j.version}</version>
+    </dependency>
+
+    <!-- Langchain4j OpenAI Integration -->
+    <dependency>
+      <groupId>dev.langchain4j</groupId>
+      <artifactId>langchain4j-open-ai</artifactId>
+      <version>${langchain4j.version}</version>
+    </dependency>
+
+    <!-- Langchain4j MongoDB Atlas (for vector storage if needed) -->
+    <dependency>
+      <groupId>dev.langchain4j</groupId>
+      <artifactId>langchain4j-mongodb-atlas</artifactId>
+      <version>${langchain4j.version}</version>
+    </dependency>
+  </dependencies>
+
+</project>
