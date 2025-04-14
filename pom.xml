@@ -33,12 +33,6 @@
       <version>${langchain4j.version}</version>
     </dependency>
 
-    <!-- Langchain4j MongoDB Atlas (for vector storage if needed) -->
-    <dependency>
-      <groupId>dev.langchain4j</groupId>
-      <artifactId>langchain4j-mongodb-atlas</artifactId>
-      <version>${langchain4j.version}</version>
-    </dependency>
   </dependencies>
 
 </project>
