@@ -1,10 +1,12 @@
 package com.travelplanner.api;
 
+import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
 import akka.javasdk.annotations.http.Get;
 import akka.javasdk.annotations.http.HttpEndpoint;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
+import akka.javasdk.http.HttpResponses;
 import com.travelplanner.application.TravelPlannerWorkflow;
 import com.travelplanner.application.TripEntity;
 import com.travelplanner.domain.TravelPlan;
@@ -182,9 +184,11 @@ public class TravelPlannerEndpoint {
   /**
    * Endpoint to create a travel plan using the workflow.
    * This stores the plan and updates the user profile.
+   * Trip details can be accessed from the resource
+   * returned in the response.
    */
   @Post("/create")
-  public CreateTripResponse createTravelPlan(GenerateTravelPlanRequest request) {
+  public HttpResponse createTravelPlan(GenerateTravelPlanRequest request) {
     logger.info("Received travel plan creation request for user: {}", request.userId());
 
     // Generate a unique ID for this travel plan request
@@ -206,7 +210,8 @@ public class TravelPlannerEndpoint {
     componentClient.forWorkflow(tripId)
         .method(TravelPlannerWorkflow::createTravelPlan)
         .invoke(command);
-    return new CreateTripResponse(tripId);
+
+    return HttpResponses.created(new CreateTripResponse(tripId), "/travel-planner/trips/" + tripId);
   }
 
   /**

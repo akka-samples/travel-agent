@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.time.LocalDate;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * Workflow that coordinates the travel planning process.
@@ -41,7 +40,8 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
       STARTED,
       PLAN_GENERATED,
       TRIP_STORED,
-      COMPLETED
+      COMPLETED,
+      ERROR
     }
 
     /**
@@ -82,15 +82,13 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
   public WorkflowDef<State> definition() {
     // Step 1: Generate the travel plan
     Step generatePlan = step("generate-plan")
-        .asyncCall(() ->
-            CompletableFuture.completedFuture( // FIXME remove when we have sync calls
-                travelPlannerAgent.generateTravelPlan(
-                    currentState().userId(),
-                    currentState().destination(),
-                    currentState().startDate(),
-                    currentState().endDate(),
-                    currentState().budget()
-                )
+        .call(() ->
+            travelPlannerAgent.generateTravelPlan(
+                currentState().userId(),
+                currentState().destination(),
+                currentState().startDate(),
+                currentState().endDate(),
+                currentState().budget()
             )
         )
         .andThen(TravelPlan.class, generatedPlan -> {
@@ -100,11 +98,11 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
               .updateState(currentState().withStatus(State.Status.PLAN_GENERATED))
               .transitionTo("store-trip", generatedPlan);
         })
-        .timeout(Duration.ofSeconds(120)); // LLM may take long time to respond
+        .timeout(Duration.ofSeconds(120));
 
     // Step 2: Store the trip in the TripEntity
     Step storeTrip = step("store-trip")
-        .asyncCall(TravelPlan.class, generatedPlan -> {
+        .call(TravelPlan.class, generatedPlan -> {
           TripEntity.CreateTrip createTripCmd = new TripEntity.CreateTrip(
               currentState().tripId(),
               currentState().userId(),
@@ -116,10 +114,9 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
           );
 
           return
-              CompletableFuture.completedFuture( // FIXME remove when we have sync calls
-                  componentClient.forEventSourcedEntity(currentState().tripId())
-                      .method(TripEntity::createTrip)
-                      .invoke(createTripCmd));
+              componentClient.forEventSourcedEntity(currentState().tripId())
+                  .method(TripEntity::createTrip)
+                  .invoke(createTripCmd);
         })
         .andThen(Done.class, __ -> {
           logger.info("Stored trip {}", currentState().tripId());
@@ -131,15 +128,14 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
 
     // Step 3: Update the user profile
     Step updateUserProfile = step("update-user-profile")
-        .asyncCall(() -> {
+        .call(() -> {
           UserProfileEntity.AddCompletedTrip addTripCmd =
               new UserProfileEntity.AddCompletedTrip(currentState().tripId());
 
           return
-              CompletableFuture.completedFuture( // FIXME remove when we have sync calls
-                  componentClient.forEventSourcedEntity(currentState().userId())
-                      .method(UserProfileEntity::addCompletedTrip)
-                      .invoke(addTripCmd));
+              componentClient.forEventSourcedEntity(currentState().userId())
+                  .method(UserProfileEntity::addCompletedTrip)
+                  .invoke(addTripCmd);
         })
         .andThen(Done.class, __ -> {
           logger.info("Updated user profile for trip {}", currentState().tripId());
@@ -149,12 +145,25 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
               .end();
         });
 
+    Step errorStep = step("error")
+        .call(() -> {
+              logger.error("Workflow for trip [{}] failed", currentState().tripId());
+              return Done.done();
+            }
+        )
+        .andThen(Done.class, __ -> {
+          return effects()
+              .updateState(currentState().withStatus(State.Status.ERROR))
+              .end();
+        });
+
     // Define the workflow with all steps
     return workflow()
-        .defaultStepTimeout(Duration.ofSeconds(150)) // FIXME why doesn't the specific step timeout work?
         .addStep(generatePlan)
         .addStep(storeTrip)
-        .addStep(updateUserProfile);
+        .addStep(updateUserProfile)
+        .addStep(errorStep)
+        .defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"));
   }
 
   /**

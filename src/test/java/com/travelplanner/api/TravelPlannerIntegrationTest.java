@@ -48,12 +48,10 @@ public class TravelPlannerIntegrationTest extends TestKitSupport {
     UserProfileEndpoint.CreateUserRequest createUserRequest =
         new UserProfileEndpoint.CreateUserRequest(userName, userEmail);
 
-    var createUserResponse = await(
+    var createUserResponse =
         httpClient.POST("/users/" + userId)
             .withRequestBody(createUserRequest)
-            .invokeAsync(),
-        timeout
-    );
+            .invoke();
 
     assertThat(createUserResponse.status()).isEqualTo(StatusCodes.CREATED);
     logger.info("Created user profile: {}", userId);
@@ -65,12 +63,10 @@ public class TravelPlannerIntegrationTest extends TestKitSupport {
     addTravelPreference(userId, TravelPreference.PreferenceType.ACTIVITY, "museums", 5);
 
     // Step 3: Verify the user profile was created with preferences
-    var userProfileResponse = await(
+    var userProfileResponse =
         httpClient.GET("/users/" + userId)
             .responseBodyAs(UserProfileEndpoint.UserProfileResponse.class)
-            .invokeAsync(),
-        timeout
-    );
+            .invoke();
 
     assertThat(userProfileResponse.body().userId()).isEqualTo(userId);
     assertThat(userProfileResponse.body().name()).isEqualTo(userName);
@@ -88,13 +84,11 @@ public class TravelPlannerIntegrationTest extends TestKitSupport {
         new TravelPlannerEndpoint.GenerateTravelPlanRequest(
             userId, destination, startDate, endDate, budget);
 
-    var createTripResponse = await(
+    var createTripResponse =
         httpClient.POST("/travel-planner/create")
             .withRequestBody(createTripRequest)
             .responseBodyAs(TravelPlannerEndpoint.CreateTripResponse.class)
-            .invokeAsync(),
-        timeout
-    );
+            .invoke();
 
     String tripId = createTripResponse.body().tripId();
     assertThat(tripId).isNotEmpty();
@@ -116,12 +110,10 @@ public class TravelPlannerIntegrationTest extends TestKitSupport {
         });
 
     // Step 6: Retrieve and verify the trip details
-    var tripResponse = await(
+    var tripResponse =
         httpClient.GET("/travel-planner/trips/" + tripId)
             .responseBodyAs(TravelPlannerEndpoint.TripResponse.class)
-            .invokeAsync(),
-        timeout
-    );
+            .invoke();
 
     assertThat(tripResponse.body().tripId()).isEqualTo(tripId);
     assertThat(tripResponse.body().userId()).isEqualTo(userId);
@@ -143,12 +135,10 @@ public class TravelPlannerIntegrationTest extends TestKitSupport {
     logger.info("Successfully verified complete travel plan");
 
     // Step 7: Verify the trip was added to the user's profile
-    var updatedUserProfile = await(
+    var updatedUserProfile =
         httpClient.GET("/users/" + userId)
             .responseBodyAs(UserProfileEndpoint.UserProfileResponse.class)
-            .invokeAsync(),
-        timeout
-    );
+            .invoke();
 
     assertThat(updatedUserProfile.body().pastTripIds()).contains(tripId);
     logger.info("Verified trip was added to user profile");
@@ -158,12 +148,10 @@ public class TravelPlannerIntegrationTest extends TestKitSupport {
     UserProfileEndpoint.AddPreferenceRequest preferenceRequest =
         new UserProfileEndpoint.AddPreferenceRequest(type, value, priority);
 
-    var response = await(
+    var response =
         httpClient.POST("/users/" + userId + "/preferences")
             .withRequestBody(preferenceRequest)
-            .invokeAsync(),
-        timeout
-    );
+            .invoke();
 
     assertThat(response.status()).isEqualTo(StatusCodes.OK);
     logger.info("Added preference: {} - {}", type, value);

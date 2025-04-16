@@ -2,6 +2,8 @@
 
 The Travel Planner Agent is an AI-powered application built on the Akka SDK that helps users create personalized travel itineraries. The service leverages event sourcing and large language models (LLMs) to generate detailed travel plans based on user preferences and trip parameters.
 
+This example illustrates how to interact with a LLM using Langchain4J. Event Sourced Entity is used for durable state of user preferences and generated trips. It's using an Akka Workflow for reliable orchestration of the interactions.
+
 To understand the Akka concepts that are the basis for this example, see [Development Process](https://doc.akka.io/concepts/development-process.html) in the documentation.
 
 This project contains a skeleton to create an agentic AI service. To understand more about these components, see [Developing services](https://doc.akka.io/java/index.html). Other examples can be found [here](https://doc.akka.io/java/samples.html).
@@ -87,7 +89,7 @@ curl -i localhost:9000/travel-planner/create \
 Get a trip by ID:
 
 ```shell
-curl -i localhost:9000/travel-planner/trip/<tripId>
+curl -i localhost:9000/travel-planner/trips/<tripId>
 ```
 
 ### Run tests
