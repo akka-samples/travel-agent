@@ -3,15 +3,12 @@ package com.travelplanner.application;
 import akka.javasdk.JsonSupport;
 import akka.javasdk.client.ComponentClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.travelplanner.KeyUtils;
 import com.travelplanner.domain.TravelPlan;
 import com.travelplanner.domain.TravelPreference;
 import com.travelplanner.domain.UserProfile;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
 import dev.langchain4j.model.chat.ChatLanguageModel;
-import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiChatModelName;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.SystemMessage;
 import org.slf4j.Logger;
@@ -28,8 +25,6 @@ import java.util.stream.Collectors;
  * Retrieves user profile and uses that as preferences in the request to the LLM.
  */
 public class TravelPlannerAgent {
-
-  final private static OpenAiChatModelName chatModelName = OpenAiChatModelName.GPT_4_O_MINI;
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
@@ -89,15 +84,9 @@ public class TravelPlannerAgent {
     String createTravelPlanJson(String tripDetails);
   }
 
-  public TravelPlannerAgent(ComponentClient componentClient) {
+  public TravelPlannerAgent(ComponentClient componentClient, ChatLanguageModel chatModel) {
     this.componentClient = componentClient;
-    this.chatModel = OpenAiChatModel.builder()
-        .modelName(chatModelName)
-        .apiKey(KeyUtils.readOpenAiKey())
-        .timeout(Duration.ofSeconds(60))
-        .logRequests(true)
-        .logResponses(true)
-        .build();
+    this.chatModel = chatModel;
   }
 
   /**
