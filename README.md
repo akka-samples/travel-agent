@@ -92,6 +92,12 @@ Get a trip by ID:
 curl -i localhost:9000/travel-planner/trips/<tripId>
 ```
 
+or as human readable text:
+
+```shell
+curl -i localhost:9000/travel-planner/trips/<tripId>/as-text
+```
+
 ### Run tests
 
 Run unit tests with:

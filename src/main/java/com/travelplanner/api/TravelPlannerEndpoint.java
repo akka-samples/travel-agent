@@ -228,4 +228,19 @@ public class TravelPlannerEndpoint {
     return TripResponse.fromDomain(trip);
   }
 
+  /**
+   * Endpoint to get a trip by ID in human readable text format.
+   */
+  @Get("/trips/{tripId}/as-text")
+  public String getTripAsText(String tripId) {
+    logger.info("Received request to get trip: {}", tripId);
+
+    var trip =
+        componentClient.forEventSourcedEntity(tripId)
+            .method(TripEntity::getTrip)
+            .invoke();
+
+    return TripTextFormatter.getTripAsText(trip);
+  }
+
 }
