@@ -2,7 +2,6 @@ package com.travelplanner.api;
 
 import akka.http.javadsl.model.StatusCodes;
 import akka.javasdk.testkit.TestKitSupport;
-import com.travelplanner.KeyUtils;
 import com.travelplanner.domain.TravelPreference;
 import com.travelplanner.domain.Trip;
 import org.awaitility.Awaitility;
@@ -31,10 +30,11 @@ public class TravelPlannerIntegrationTest extends TestKitSupport {
   @BeforeAll
   @Override
   public void beforeAll() {
-    if (KeyUtils.hasValidKeys()) {
-      super.beforeAll();
-    } else {
+    var openAiApiKey = System.getenv("OPENAI_API_KEY");
+    if (openAiApiKey == null || openAiApiKey.isEmpty()) {
       throw new RuntimeException("OpenAI API key not found. Set the OPENAI_API_KEY environment variable.");
+    } else {
+      super.beforeAll();
     }
   }
 

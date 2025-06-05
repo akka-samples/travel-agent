@@ -19,7 +19,6 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
-  private final TravelPlannerAgent travelPlannerAgent;
 
   /**
    * State for the TravelPlannerWorkflow.
@@ -60,9 +59,8 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
     }
   }
 
-  public TravelPlannerWorkflow(ComponentClient componentClient, TravelPlannerAgent travelPlannerAgent) {
+  public TravelPlannerWorkflow(ComponentClient componentClient) {
     this.componentClient = componentClient;
-    this.travelPlannerAgent = travelPlannerAgent;
   }
 
   /**
@@ -80,16 +78,26 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
 
   @Override
   public WorkflowDef<State> definition() {
-    // Step 1: Generate the travel plan
-    Step generatePlan = step("generate-plan")
+    return workflow()
+        .addStep(generatePlan())
+        .addStep(storeTrip())
+        .addStep(updateUserProfile())
+        .addStep(errorStep())
+        .defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"));
+  }
+
+  // Step 1: Generate the travel plan
+  private Step generatePlan() {
+    return step("generate-plan")
         .call(() ->
-            travelPlannerAgent.generateTravelPlan(
-                currentState().userId(),
-                currentState().destination(),
-                currentState().startDate(),
-                currentState().endDate(),
-                currentState().budget()
-            )
+            componentClient.forAgent().inSession(sessionId())
+                .method(TravelPlannerAgent::generateTravelPlan)
+                .invoke(new TravelPlannerAgent.Request(
+                    currentState().userId(),
+                    currentState().destination(),
+                    currentState().startDate(),
+                    currentState().endDate(),
+                    currentState().budget()))
         )
         .andThen(TravelPlan.class, generatedPlan -> {
           logger.info("Generated travel plan for trip {}", currentState().tripId());
@@ -99,9 +107,11 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
               .transitionTo("store-trip", generatedPlan);
         })
         .timeout(Duration.ofSeconds(120));
+  }
 
-    // Step 2: Store the trip in the TripEntity
-    Step storeTrip = step("store-trip")
+  // Step 2: Store the trip in the TripEntity
+  private Step storeTrip() {
+    return step("store-trip")
         .call(TravelPlan.class, generatedPlan -> {
           TripEntity.CreateTrip createTripCmd = new TripEntity.CreateTrip(
               currentState().tripId(),
@@ -118,16 +128,18 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
                   .method(TripEntity::createTrip)
                   .invoke(createTripCmd);
         })
-        .andThen(Done.class, __ -> {
+        .andThen(() -> {
           logger.info("Stored trip {}", currentState().tripId());
 
           return effects()
               .updateState(currentState().withStatus(State.Status.TRIP_STORED))
               .transitionTo("update-user-profile");
         });
+  }
 
-    // Step 3: Update the user profile
-    Step updateUserProfile = step("update-user-profile")
+  // Step 3: Update the user profile
+  private Step updateUserProfile() {
+    return step("update-user-profile")
         .call(() -> {
           UserProfileEntity.AddCompletedTrip addTripCmd =
               new UserProfileEntity.AddCompletedTrip(currentState().tripId());
@@ -137,33 +149,25 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
                   .method(UserProfileEntity::addCompletedTrip)
                   .invoke(addTripCmd);
         })
-        .andThen(Done.class, __ -> {
+        .andThen(() -> {
           logger.info("Updated user profile for trip {}", currentState().tripId());
 
           return effects()
               .updateState(currentState().withStatus(State.Status.COMPLETED))
               .end();
         });
+  }
 
-    Step errorStep = step("error")
+  private Step errorStep() {
+    return step("error")
         .call(() -> {
               logger.error("Workflow for trip [{}] failed", currentState().tripId());
               return Done.done();
             }
         )
-        .andThen(Done.class, __ -> {
-          return effects()
+        .andThen(() -> effects()
               .updateState(currentState().withStatus(State.Status.ERROR))
-              .end();
-        });
-
-    // Define the workflow with all steps
-    return workflow()
-        .addStep(generatePlan)
-        .addStep(storeTrip)
-        .addStep(updateUserProfile)
-        .addStep(errorStep)
-        .defaultStepRecoverStrategy(maxRetries(2).failoverTo("error"));
+              .end());
   }
 
   /**
@@ -202,5 +206,9 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
       return effects().error("Workflow not started");
     }
     return effects().reply(currentState());
+  }
+
+  private String sessionId() {
+    return commandContext().workflowId();
   }
 }
