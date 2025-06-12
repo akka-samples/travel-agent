@@ -204,9 +204,8 @@ sequenceDiagram
 
 ### Key Technologies
 
-- **Akka SDK**: Provides the foundation for building event-sourced, stateful services
+- **Akka SDK**: Provides the foundation for building agentic, event-sourced, stateful services
 - **Event Sourcing**: Used to track all state changes in the system
-- **Langchain4j**: Java library for interacting with LLMs
 - **OpenAI GPT-4o-mini**: The LLM used to generate travel plans
 
 ### Data Flow
