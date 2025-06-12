@@ -4,7 +4,7 @@
   <parent>
     <groupId>io.akka</groupId>
     <artifactId>akka-javasdk-parent</artifactId>
-    <version>3.3.2</version>
+    <version>3.4.0-M4</version>
   </parent>
   
   <groupId>io.akka.example</groupId>
@@ -14,25 +14,8 @@
 
   <name>travel-agent</name>
 
-  <properties>
-    <langchain4j.version>1.0.0-beta1</langchain4j.version>
-  </properties>
-
   <dependencies>
-    <!-- Langchain4j Core -->
-    <dependency>
-      <groupId>dev.langchain4j</groupId>
-      <artifactId>langchain4j</artifactId>
-      <version>${langchain4j.version}</version>
-    </dependency>
-
-    <!-- Langchain4j OpenAI Integration -->
-    <dependency>
-      <groupId>dev.langchain4j</groupId>
-      <artifactId>langchain4j-open-ai</artifactId>
-      <version>${langchain4j.version}</version>
-    </dependency>
-
+    <!-- Your dependencies go here -->
   </dependencies>
 
 </project>
