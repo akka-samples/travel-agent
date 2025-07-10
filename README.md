@@ -12,6 +12,12 @@ This project contains a skeleton to create an agentic AI service. To understand 
 
 Provide your OpenAI API key in environment variable `OPENAI_API_KEY`.
 
+```shell
+export OPENAI_API_KEY="your_openai_api_key"
+```
+
+Or change the `application.conf` file to use a different model provider.
+
 To start your service locally, run:
 
 ```shell
