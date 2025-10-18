@@ -43,6 +43,17 @@ jobs:
         with:
           jvm: temurin:1.21
 
+      - name: Checkout Global Scripts
+        uses: actions/checkout@v4
+        with:
+          repository: akka/github-actions-scripts
+          path: scripts
+
+      - name: Setup global resolver
+        run: |
+          chmod +x ./scripts/setup_global_resolver.sh
+          ./scripts/setup_global_resolver.sh
+
       - name: mvn test
         run: |-
-          mvn -s .github/settings.xml test --no-transfer-progress
+          mvn test --no-transfer-progress
