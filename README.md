@@ -112,7 +112,7 @@ Run unit tests with:
 mvn test
 ```
 
-Integration tests require that you have defined the OpenAI API key in the environment variable `OPENAI_API_KEY`. Then run integration tests with:
+Integration tests use a mock model provider and do not require an OpenAI API key. Run integration tests with:
 
 ```shell
 mvn verify
