@@ -12,7 +12,6 @@ import com.travelplanner.application.TravelPlannerWorkflow;
 import com.travelplanner.application.TripEntity;
 import com.travelplanner.domain.TravelPlan;
 import com.travelplanner.domain.Trip;
-
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -27,31 +26,36 @@ public class TravelPlannerEndpoint {
   }
 
   public record CreateTravelPlanRequest(
-      String userId,
-      String destination,
-      LocalDate startDate,
-      LocalDate endDate,
-      double budget) {
-  }
+    String userId,
+    String destination,
+    LocalDate startDate,
+    LocalDate endDate,
+    double budget
+  ) {}
 
-  public record CreateTravelPlanResponse(String tripId) {
-  }
+  public record CreateTravelPlanResponse(String tripId) {}
 
   public record TripResponse(
-      String tripId,
-      String userId,
-      String destination,
-      LocalDate startDate,
-      LocalDate endDate,
-      double budget,
-      String status,
-      TravelPlan plan) {
-
+    String tripId,
+    String userId,
+    String destination,
+    LocalDate startDate,
+    LocalDate endDate,
+    double budget,
+    String status,
+    TravelPlan plan
+  ) {
     static TripResponse fromDomain(Trip trip) {
       return new TripResponse(
-          trip.tripId(), trip.userId(), trip.destination(),
-          trip.startDate(), trip.endDate(), trip.budget(),
-          trip.status().name(), trip.plan());
+        trip.tripId(),
+        trip.userId(),
+        trip.destination(),
+        trip.startDate(),
+        trip.endDate(),
+        trip.budget(),
+        trip.status().name(),
+        trip.plan()
+      );
     }
   }
 
@@ -67,11 +71,18 @@ public class TravelPlannerEndpoint {
     var tripId = UUID.randomUUID().toString();
 
     componentClient
-        .forWorkflow(tripId)
-        .method(TravelPlannerWorkflow::createTravelPlan)
-        .invoke(new TravelPlannerWorkflow.CreateCommand(
-            tripId, request.userId(), request.destination(),
-            request.startDate(), request.endDate(), request.budget()));
+      .forWorkflow(tripId)
+      .method(TravelPlannerWorkflow::createTravelPlan)
+      .invoke(
+        new TravelPlannerWorkflow.CreateCommand(
+          tripId,
+          request.userId(),
+          request.destination(),
+          request.startDate(),
+          request.endDate(),
+          request.budget()
+        )
+      );
 
     return HttpResponses.created(new CreateTravelPlanResponse(tripId));
   }
@@ -80,9 +91,9 @@ public class TravelPlannerEndpoint {
   public TripResponse getTrip(String tripId) {
     try {
       var trip = componentClient
-          .forEventSourcedEntity(tripId)
-          .method(TripEntity::getTrip)
-          .invoke();
+        .forEventSourcedEntity(tripId)
+        .method(TripEntity::getTrip)
+        .invoke();
       return TripResponse.fromDomain(trip);
     } catch (Exception e) {
       throw HttpException.notFound();
@@ -93,14 +104,17 @@ public class TravelPlannerEndpoint {
   public String getTripAsText(String tripId) {
     try {
       var trip = componentClient
-          .forEventSourcedEntity(tripId)
-          .method(TripEntity::getTrip)
-          .invoke();
-      return trip.plan().asText(
+        .forEventSourcedEntity(tripId)
+        .method(TripEntity::getTrip)
+        .invoke();
+      return trip
+        .plan()
+        .asText(
           trip.destination(),
           trip.startDate().toString(),
           trip.endDate().toString(),
-          trip.budget());
+          trip.budget()
+        );
     } catch (Exception e) {
       throw HttpException.notFound();
     }

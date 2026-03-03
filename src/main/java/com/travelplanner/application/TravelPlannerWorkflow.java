@@ -1,50 +1,71 @@
 package com.travelplanner.application;
 
+import static java.time.Duration.ofSeconds;
+
 import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
 import com.travelplanner.domain.TravelPlan;
-
 import java.time.LocalDate;
-
-import static java.time.Duration.ofSeconds;
 
 @Component(id = "travel-planner-workflow")
 public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State> {
 
   public enum WorkflowStatus {
-    STARTED, PLAN_GENERATED, TRIP_STORED, COMPLETED, ERROR
+    STARTED,
+    PLAN_GENERATED,
+    TRIP_STORED,
+    COMPLETED,
+    ERROR,
   }
 
   public record State(
-      String tripId,
-      String userId,
-      String destination,
-      LocalDate startDate,
-      LocalDate endDate,
-      double budget,
-      WorkflowStatus status,
-      TravelPlan generatedPlan) {
-
+    String tripId,
+    String userId,
+    String destination,
+    LocalDate startDate,
+    LocalDate endDate,
+    double budget,
+    WorkflowStatus status,
+    TravelPlan generatedPlan
+  ) {
     State withStatus(WorkflowStatus status) {
-      return new State(tripId, userId, destination, startDate, endDate, budget, status, generatedPlan);
+      return new State(
+        tripId,
+        userId,
+        destination,
+        startDate,
+        endDate,
+        budget,
+        status,
+        generatedPlan
+      );
     }
 
     State withGeneratedPlan(TravelPlan plan) {
-      return new State(tripId, userId, destination, startDate, endDate, budget, WorkflowStatus.PLAN_GENERATED, plan);
+      return new State(
+        tripId,
+        userId,
+        destination,
+        startDate,
+        endDate,
+        budget,
+        WorkflowStatus.PLAN_GENERATED,
+        plan
+      );
     }
   }
 
   public record CreateCommand(
-      String tripId,
-      String userId,
-      String destination,
-      LocalDate startDate,
-      LocalDate endDate,
-      double budget) {
-  }
+    String tripId,
+    String userId,
+    String destination,
+    LocalDate startDate,
+    LocalDate endDate,
+    double budget
+  ) {}
 
   private final ComponentClient componentClient;
 
@@ -55,9 +76,9 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
   @Override
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
-        .defaultStepTimeout(ofSeconds(120))
-        .defaultStepRecovery(maxRetries(2).failoverTo(TravelPlannerWorkflow::errorStep))
-        .build();
+      .defaultStepTimeout(ofSeconds(120))
+      .defaultStepRecovery(maxRetries(2).failoverTo(TravelPlannerWorkflow::errorStep))
+      .build();
   }
 
   public Effect<Done> createTravelPlan(CreateCommand command) {
@@ -65,14 +86,20 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
       return effects().error("Workflow already started");
     }
     var initialState = new State(
-        command.tripId(), command.userId(), command.destination(),
-        command.startDate(), command.endDate(), command.budget(),
-        WorkflowStatus.STARTED, null);
+      command.tripId(),
+      command.userId(),
+      command.destination(),
+      command.startDate(),
+      command.endDate(),
+      command.budget(),
+      WorkflowStatus.STARTED,
+      null
+    );
 
     return effects()
-        .updateState(initialState)
-        .transitionTo(TravelPlannerWorkflow::generatePlan)
-        .thenReply(Done.getInstance());
+      .updateState(initialState)
+      .transitionTo(TravelPlannerWorkflow::generatePlan)
+      .thenReply(Done.getInstance());
   }
 
   public ReadOnlyEffect<State> getStatus() {
@@ -85,61 +112,63 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
   @StepName("generate-plan")
   private StepEffect generatePlan() {
     var request = new TravelPlannerAgent.GenerateRequest(
-        currentState().userId(),
-        currentState().destination(),
-        currentState().startDate(),
-        currentState().endDate(),
-        currentState().budget());
+      currentState().userId(),
+      currentState().destination(),
+      currentState().startDate(),
+      currentState().endDate(),
+      currentState().budget()
+    );
 
     var plan = componentClient
-        .forAgent()
-        .inSession(sessionId())
-        .method(TravelPlannerAgent::generateTravelPlan)
-        .invoke(request);
+      .forAgent()
+      .inSession(sessionId())
+      .method(TravelPlannerAgent::generateTravelPlan)
+      .invoke(request);
 
     return stepEffects()
-        .updateState(currentState().withGeneratedPlan(plan))
-        .thenTransitionTo(TravelPlannerWorkflow::storeTrip);
+      .updateState(currentState().withGeneratedPlan(plan))
+      .thenTransitionTo(TravelPlannerWorkflow::storeTrip);
   }
 
   @StepName("store-trip")
   private StepEffect storeTrip() {
     var command = new TripEntity.CreateTripCommand(
-        currentState().tripId(),
-        currentState().userId(),
-        currentState().destination(),
-        currentState().startDate(),
-        currentState().endDate(),
-        currentState().budget(),
-        currentState().generatedPlan());
+      currentState().tripId(),
+      currentState().userId(),
+      currentState().destination(),
+      currentState().startDate(),
+      currentState().endDate(),
+      currentState().budget(),
+      currentState().generatedPlan()
+    );
 
     componentClient
-        .forEventSourcedEntity(currentState().tripId())
-        .method(TripEntity::createTrip)
-        .invoke(command);
+      .forEventSourcedEntity(currentState().tripId())
+      .method(TripEntity::createTrip)
+      .invoke(command);
 
     return stepEffects()
-        .updateState(currentState().withStatus(WorkflowStatus.TRIP_STORED))
-        .thenTransitionTo(TravelPlannerWorkflow::updateUserProfile);
+      .updateState(currentState().withStatus(WorkflowStatus.TRIP_STORED))
+      .thenTransitionTo(TravelPlannerWorkflow::updateUserProfile);
   }
 
   @StepName("update-user-profile")
   private StepEffect updateUserProfile() {
     componentClient
-        .forEventSourcedEntity(currentState().userId())
-        .method(UserProfileEntity::addCompletedTrip)
-        .invoke(currentState().tripId());
+      .forEventSourcedEntity(currentState().userId())
+      .method(UserProfileEntity::addCompletedTrip)
+      .invoke(currentState().tripId());
 
     return stepEffects()
-        .updateState(currentState().withStatus(WorkflowStatus.COMPLETED))
-        .thenEnd();
+      .updateState(currentState().withStatus(WorkflowStatus.COMPLETED))
+      .thenEnd();
   }
 
   @StepName("error")
   private StepEffect errorStep() {
     return stepEffects()
-        .updateState(currentState().withStatus(WorkflowStatus.ERROR))
-        .thenEnd();
+      .updateState(currentState().withStatus(WorkflowStatus.ERROR))
+      .thenEnd();
   }
 
   private String sessionId() {

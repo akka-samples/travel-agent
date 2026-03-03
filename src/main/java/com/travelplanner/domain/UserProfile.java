@@ -4,12 +4,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public record UserProfile(
-    String userId,
-    String name,
-    String email,
-    List<TravelPreference> preferences,
-    List<String> pastTripIds) {
-
+  String userId,
+  String name,
+  String email,
+  List<TravelPreference> preferences,
+  List<String> pastTripIds
+) {
   public static UserProfile create(String userId, String name, String email) {
     if (name == null || name.isBlank()) {
       throw new IllegalArgumentException("Name must not be empty");

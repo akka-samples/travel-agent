@@ -1,14 +1,13 @@
 package com.travelplanner.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import com.travelplanner.domain.TravelPreference;
 import com.travelplanner.domain.TravelPreference.PreferenceType;
-import com.travelplanner.domain.UserEvent.*;
-import com.travelplanner.domain.UserProfile;
+import com.travelplanner.domain.UserEvent.UserProfileCreated;
 import org.junit.jupiter.api.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 class UserProfileEntityTest {
 
@@ -16,8 +15,9 @@ class UserProfileEntityTest {
   void shouldCreateUserProfile() {
     var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    var result = testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+    var result = testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
     assertThat(result.isReply()).isTrue();
     assertThat(result.getReply()).isEqualTo(Done.getInstance());
@@ -38,11 +38,13 @@ class UserProfileEntityTest {
   void shouldRejectDuplicateCreate() {
     var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
-    var result = testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("Jane", "jane@example.com"));
+    var result = testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("Jane", "jane@example.com"));
 
     assertThat(result.isError()).isTrue();
   }
@@ -51,8 +53,9 @@ class UserProfileEntityTest {
   void shouldRejectEmptyName() {
     var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    var result = testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("", "john@example.com"));
+    var result = testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("", "john@example.com"));
 
     assertThat(result.isError()).isTrue();
   }
@@ -61,11 +64,15 @@ class UserProfileEntityTest {
   void shouldUpdateUserProfile() {
     var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
-    var result = testKit.method(UserProfileEntity::updateUserProfile)
-        .invoke(new UserProfileEntity.UpdateCommand("John Updated", "john.updated@example.com"));
+    var result = testKit
+      .method(UserProfileEntity::updateUserProfile)
+      .invoke(
+        new UserProfileEntity.UpdateCommand("John Updated", "john.updated@example.com")
+      );
 
     assertThat(result.isReply()).isTrue();
 
@@ -78,19 +85,21 @@ class UserProfileEntityTest {
   void shouldAddTravelPreference() {
     var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
     var preference = new TravelPreference(PreferenceType.ACCOMMODATION_TYPE, "hotel", 5);
 
-    var result = testKit.method(UserProfileEntity::addTravelPreference)
-        .invoke(preference);
+    var result = testKit.method(UserProfileEntity::addTravelPreference).invoke(preference);
 
     assertThat(result.isReply()).isTrue();
 
     var state = testKit.getState();
     assertThat(state.preferences()).hasSize(1);
-    assertThat(state.preferences().getFirst().type()).isEqualTo(PreferenceType.ACCOMMODATION_TYPE);
+    assertThat(state.preferences().getFirst().type()).isEqualTo(
+      PreferenceType.ACCOMMODATION_TYPE
+    );
     assertThat(state.preferences().getFirst().value()).isEqualTo("hotel");
     assertThat(state.preferences().getFirst().priority()).isEqualTo(5);
   }
@@ -99,11 +108,11 @@ class UserProfileEntityTest {
   void shouldAddCompletedTrip() {
     var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
-    var result = testKit.method(UserProfileEntity::addCompletedTrip)
-        .invoke("trip-123");
+    var result = testKit.method(UserProfileEntity::addCompletedTrip).invoke("trip-123");
 
     assertThat(result.isReply()).isTrue();
 
@@ -115,8 +124,9 @@ class UserProfileEntityTest {
   void shouldGetUserProfile() {
     var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
     var result = testKit.method(UserProfileEntity::getUserProfile).invoke();
 

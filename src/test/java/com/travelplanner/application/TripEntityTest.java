@@ -1,29 +1,33 @@
 package com.travelplanner.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
 import com.travelplanner.domain.TravelPlan;
 import com.travelplanner.domain.TripEvent.TripCreated;
-import org.junit.jupiter.api.Test;
-
 import java.time.LocalDate;
 import java.util.List;
-
-import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.Test;
 
 class TripEntityTest {
 
   private TravelPlan samplePlan() {
     return new TravelPlan(
-        "A wonderful trip",
-        500.0,
-        List.of(new TravelPlan.DayPlan(
-            1, "2025-06-15",
-            new TravelPlan.Accommodation("Hotel", "Nice hotel", 100.0),
-            List.of(new TravelPlan.Transportation("flight", "Airport transfer", 50.0)),
-            List.of(new TravelPlan.Activity("Sightseeing", "City tour", 30.0, "morning")),
-            List.of(new TravelPlan.Meal("dinner", "Local restaurant", 40.0)),
-            220.0)));
+      "A wonderful trip",
+      500.0,
+      List.of(
+        new TravelPlan.DayPlan(
+          1,
+          "2025-06-15",
+          new TravelPlan.Accommodation("Hotel", "Nice hotel", 100.0),
+          List.of(new TravelPlan.Transportation("flight", "Airport transfer", 50.0)),
+          List.of(new TravelPlan.Activity("Sightseeing", "City tour", 30.0, "morning")),
+          List.of(new TravelPlan.Meal("dinner", "Local restaurant", 40.0)),
+          220.0
+        )
+      )
+    );
   }
 
   @Test
@@ -31,9 +35,14 @@ class TripEntityTest {
     var testKit = EventSourcedTestKit.of("trip-1", TripEntity::new);
 
     var command = new TripEntity.CreateTripCommand(
-        "trip-1", "user-1", "Paris",
-        LocalDate.of(2025, 6, 15), LocalDate.of(2025, 6, 22),
-        2000.0, samplePlan());
+      "trip-1",
+      "user-1",
+      "Paris",
+      LocalDate.of(2025, 6, 15),
+      LocalDate.of(2025, 6, 22),
+      2000.0,
+      samplePlan()
+    );
 
     var result = testKit.method(TripEntity::createTrip).invoke(command);
 
@@ -56,9 +65,14 @@ class TripEntityTest {
     var testKit = EventSourcedTestKit.of("trip-1", TripEntity::new);
 
     var command = new TripEntity.CreateTripCommand(
-        "trip-1", "user-1", "Paris",
-        LocalDate.of(2025, 6, 15), LocalDate.of(2025, 6, 22),
-        2000.0, samplePlan());
+      "trip-1",
+      "user-1",
+      "Paris",
+      LocalDate.of(2025, 6, 15),
+      LocalDate.of(2025, 6, 22),
+      2000.0,
+      samplePlan()
+    );
 
     testKit.method(TripEntity::createTrip).invoke(command);
     var result = testKit.method(TripEntity::createTrip).invoke(command);
@@ -71,9 +85,14 @@ class TripEntityTest {
     var testKit = EventSourcedTestKit.of("trip-1", TripEntity::new);
 
     var command = new TripEntity.CreateTripCommand(
-        "trip-1", "user-1", "Paris",
-        LocalDate.of(2025, 6, 15), LocalDate.of(2025, 6, 22),
-        2000.0, samplePlan());
+      "trip-1",
+      "user-1",
+      "Paris",
+      LocalDate.of(2025, 6, 15),
+      LocalDate.of(2025, 6, 22),
+      2000.0,
+      samplePlan()
+    );
 
     testKit.method(TripEntity::createTrip).invoke(command);
     var result = testKit.method(TripEntity::getTrip).invoke();
