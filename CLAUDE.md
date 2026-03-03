@@ -161,3 +161,10 @@ Updated README.md with curl examples.
 
 Done! Created 2 domain classes, 1 entity, 1 view, 3 tests, 1 endpoint.
 ```
+
+## Active Technologies
+- Java 21 (records, sealed interfaces) + Akka SDK 3.5+ (parent POM `akka-javasdk-parent`), OpenAI GPT-4o-mini via Akka Agent componen (001-travel-planner-agent)
+- Event sourcing via Akka Event Sourced Entities (no external database) (001-travel-planner-agent)
+
+## Recent Changes
+- 001-travel-planner-agent: Added Java 21 (records, sealed interfaces) + Akka SDK 3.5+ (parent POM `akka-javasdk-parent`), OpenAI GPT-4o-mini via Akka Agent componen

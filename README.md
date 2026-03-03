@@ -240,6 +240,37 @@ sequenceDiagram
     - Clients can retrieve trip details using the trip ID
     - The response includes the structured travel plan
 
+## Spec-Driven Development (SDD)
+
+Spec-Driven Development (SDD) is an AI-assisted coding paradigm where structured, natural-language specifications serve as the executable source of truth. Instead of writing code directly, developers use tools like [GitHub Spec Kit](https://github.com/github/spec-kit) to define architectural intent and guide AI agents through a strict, multi-phase implementation pipeline. By iterating on these living specifications rather than the raw codebase, this project rapidly generates features while maintaining strict alignment with system constraints.
+
+### Setup
+
+Initialize Spec Kit commands in your project (requires Claude Code):
+
+```shell
+uvx --from git+https://github.com/github/spec-kit.git specify init . --ai claude
+```
+
+### Workflow Commands
+
+Use these `/speckit` commands in Claude Code to add new features to the application:
+
+* `/speckit.constitution` - Establish project principles
+* `/speckit.specify` - Create baseline specification
+* `/speckit.clarify` (optional) - Ask structured questions to de-risk ambiguous areas before planning (run before `/speckit.plan` if used)
+* `/speckit.plan` - Create implementation plan
+* `/speckit.tasks` - Generate actionable tasks
+* `/speckit.implement` - Execute implementation
+
+### Re-implementation Exercise
+
+As an exercise, the application can be re-implemented from specs by:
+
+1. Remove all source files: `rm -rf src/*`
+2. Uncheck all tasks in `specs/001-travel-planner-agent/tasks.md`
+3. Run `/speckit.implement` in Claude Code to regenerate the implementation from the specs
+
 ## Future Enhancements
 
 1. **Feedback Loop**: Incorporate user feedback to improve future recommendations
