@@ -1,16 +1,16 @@
-package com.example.travel.api;
+package com.travelplanner.api;
 
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import com.example.travel.api.TravelPlannerEndpoint.CreateTravelPlanRequest;
-import com.example.travel.api.TravelPlannerEndpoint.CreateTravelPlanResponse;
-import com.example.travel.api.TravelPlannerEndpoint.TripResponse;
-import com.example.travel.api.UserProfileEndpoint.AddPreferenceRequest;
-import com.example.travel.api.UserProfileEndpoint.CreateUserRequest;
-import com.example.travel.application.TravelPlannerAgent;
-import com.example.travel.domain.TravelPlan;
+import com.travelplanner.api.TravelPlannerEndpoint.CreateTravelPlanRequest;
+import com.travelplanner.api.TravelPlannerEndpoint.CreateTravelPlanResponse;
+import com.travelplanner.api.TravelPlannerEndpoint.TripResponse;
+import com.travelplanner.api.UserProfileEndpoint.AddPreferenceRequest;
+import com.travelplanner.api.UserProfileEndpoint.CreateUserRequest;
+import com.travelplanner.application.TravelPlannerAgent;
+import com.travelplanner.domain.TravelPlan;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 

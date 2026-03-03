@@ -1,13 +1,13 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import com.example.travel.domain.TravelPreference;
-import com.example.travel.domain.UserEvent;
-import com.example.travel.domain.UserEvent.*;
-import com.example.travel.domain.UserProfile;
+import com.travelplanner.domain.TravelPreference;
+import com.travelplanner.domain.UserEvent;
+import com.travelplanner.domain.UserEvent.*;
+import com.travelplanner.domain.UserProfile;
 
 @Component(id = "user-profile")
 public class UserProfileEntity extends EventSourcedEntity<UserProfile, UserEvent> {

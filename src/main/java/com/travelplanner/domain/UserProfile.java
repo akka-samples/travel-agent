@@ -1,4 +1,4 @@
-package com.example.travel.domain;
+package com.travelplanner.domain;
 
 import java.util.ArrayList;
 import java.util.List;

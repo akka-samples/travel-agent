@@ -50,7 +50,7 @@ specs/001-travel-planner-agent/
 ### Source Code (repository root)
 
 ```text
-src/main/java/com/example/travel/
+src/main/java/com/travelplanner/
 ├── domain/
 │   ├── UserProfile.java           # User state record
 │   ├── UserEvent.java             # Sealed event interface for user changes
@@ -67,7 +67,7 @@ src/main/java/com/example/travel/
     ├── UserProfileEndpoint.java   # REST API for user management
     └── TravelPlannerEndpoint.java # REST API for travel planning
 
-src/test/java/com/example/travel/
+src/test/java/com/travelplanner/
 ├── application/
 │   ├── UserProfileEntityTest.java    # Entity unit tests (EventSourcedTestKit)
 │   ├── TripEntityTest.java           # Entity unit tests (EventSourcedTestKit)

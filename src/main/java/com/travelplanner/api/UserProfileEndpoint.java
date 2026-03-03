@@ -1,4 +1,4 @@
-package com.example.travel.api;
+package com.travelplanner.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
@@ -8,9 +8,9 @@ import akka.javasdk.annotations.http.Patch;
 import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpResponses;
-import com.example.travel.application.UserProfileEntity;
-import com.example.travel.domain.TravelPreference;
-import com.example.travel.domain.UserProfile;
+import com.travelplanner.application.UserProfileEntity;
+import com.travelplanner.domain.TravelPreference;
+import com.travelplanner.domain.UserProfile;
 
 import java.util.List;
 

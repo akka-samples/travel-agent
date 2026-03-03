@@ -1,11 +1,11 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
-import com.example.travel.domain.TravelPreference;
-import com.example.travel.domain.TravelPreference.PreferenceType;
-import com.example.travel.domain.UserEvent.*;
-import com.example.travel.domain.UserProfile;
+import com.travelplanner.domain.TravelPreference;
+import com.travelplanner.domain.TravelPreference.PreferenceType;
+import com.travelplanner.domain.UserEvent.*;
+import com.travelplanner.domain.UserProfile;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

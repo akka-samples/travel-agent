@@ -19,7 +19,7 @@
 
 - [x] T001 Create Maven project with `akka-javasdk-parent` POM and required dependencies in `pom.xml`
 - [x] T002 [P] Configure LLM provider settings (OpenAI GPT-4o-mini) in `src/main/resources/application.conf`
-- [x] T003 [P] Create package structure: `com.example.travel.domain`, `com.example.travel.application`, `com.example.travel.api` under `src/main/java/`
+- [x] T003 [P] Create package structure: `com.travelplanner.domain`, `com.travelplanner.application`, `com.travelplanner.api` under `src/main/java/`
 
 ---
 
@@ -29,8 +29,8 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [x] T004 [P] Create `TravelPreference` record with `PreferenceType` enum (6 categories: ACCOMMODATION_TYPE, TRANSPORTATION_TYPE, CUISINE, ACTIVITY, CLIMATE, BUDGET_RANGE), value, and priority fields in `src/main/java/com/example/travel/domain/TravelPreference.java`
-- [x] T005 [P] Create `TravelPlan` record hierarchy: `TravelPlan` (summary, totalEstimatedCost, days), `DayPlan` (dayNumber, date, accommodation, transportation, activities, meals, dailyEstimatedCost), `Accommodation` (name, description, estimatedCost), `Transportation` (type, description, estimatedCost), `Activity` (name, description, estimatedCost, timeOfDay), `Meal` (type, suggestion, estimatedCost) in `src/main/java/com/example/travel/domain/TravelPlan.java`
+- [x] T004 [P] Create `TravelPreference` record with `PreferenceType` enum (6 categories: ACCOMMODATION_TYPE, TRANSPORTATION_TYPE, CUISINE, ACTIVITY, CLIMATE, BUDGET_RANGE), value, and priority fields in `src/main/java/com/travelplanner/domain/TravelPreference.java`
+- [x] T005 [P] Create `TravelPlan` record hierarchy: `TravelPlan` (summary, totalEstimatedCost, days), `DayPlan` (dayNumber, date, accommodation, transportation, activities, meals, dailyEstimatedCost), `Accommodation` (name, description, estimatedCost), `Transportation` (type, description, estimatedCost), `Activity` (name, description, estimatedCost, timeOfDay), `Meal` (type, suggestion, estimatedCost) in `src/main/java/com/travelplanner/domain/TravelPlan.java`
 
 **Checkpoint**: Foundation ready - shared domain records available for all user stories
 
@@ -44,24 +44,24 @@
 
 ### Domain Layer for User Story 1
 
-- [x] T006 [P] [US1] Create `UserProfile` state record with userId, name, email, preferences (List\<TravelPreference\>), pastTripIds (List\<String\>), immutable `with*` update methods, and validation logic in `src/main/java/com/example/travel/domain/UserProfile.java`
-- [x] T007 [P] [US1] Create `UserEvent` sealed interface with event records: `UserProfileCreated`, `UserProfileUpdated`, `TravelPreferenceAdded`, `TripCompleted` (each with `@TypeName`) in `src/main/java/com/example/travel/domain/UserEvent.java`
+- [x] T006 [P] [US1] Create `UserProfile` state record with userId, name, email, preferences (List\<TravelPreference\>), pastTripIds (List\<String\>), immutable `with*` update methods, and validation logic in `src/main/java/com/travelplanner/domain/UserProfile.java`
+- [x] T007 [P] [US1] Create `UserEvent` sealed interface with event records: `UserProfileCreated`, `UserProfileUpdated`, `TravelPreferenceAdded`, `TripCompleted` (each with `@TypeName`) in `src/main/java/com/travelplanner/domain/UserEvent.java`
 
 ### Application Layer for User Story 1
 
-- [x] T008 [US1] Create `UserProfileEntity` event sourced entity with command handlers: `createUserProfile` (name, email), `updateUserProfile` (name, email), `addTravelPreference` (TravelPreference), `addCompletedTrip` (tripId), `getUserProfile`; event handlers for all UserEvent types in `src/main/java/com/example/travel/application/UserProfileEntity.java`
+- [x] T008 [US1] Create `UserProfileEntity` event sourced entity with command handlers: `createUserProfile` (name, email), `updateUserProfile` (name, email), `addTravelPreference` (TravelPreference), `addCompletedTrip` (tripId), `getUserProfile`; event handlers for all UserEvent types in `src/main/java/com/travelplanner/application/UserProfileEntity.java`
 
 ### Tests for User Story 1
 
-- [x] T009 [US1] Create `UserProfileEntityTest` unit tests using `EventSourcedTestKit`: test create profile, update profile, add preference, add completed trip, get profile, and validation error cases in `src/test/java/com/example/travel/application/UserProfileEntityTest.java`
+- [x] T009 [US1] Create `UserProfileEntityTest` unit tests using `EventSourcedTestKit`: test create profile, update profile, add preference, add completed trip, get profile, and validation error cases in `src/test/java/com/travelplanner/application/UserProfileEntityTest.java`
 
 ### API Layer for User Story 1
 
-- [x] T010 [US1] Create `UserProfileEndpoint` HTTP endpoint with `@Acl` annotation: `POST /users/{userId}` (create), `GET /users/{userId}` (get), `PATCH /users/{userId}` (update), `POST /users/{userId}/preferences` (add preference); define request/response records as inner types; use `ComponentClient` with synchronous `.invoke()` in `src/main/java/com/example/travel/api/UserProfileEndpoint.java`
+- [x] T010 [US1] Create `UserProfileEndpoint` HTTP endpoint with `@Acl` annotation: `POST /users/{userId}` (create), `GET /users/{userId}` (get), `PATCH /users/{userId}` (update), `POST /users/{userId}/preferences` (add preference); define request/response records as inner types; use `ComponentClient` with synchronous `.invoke()` in `src/main/java/com/travelplanner/api/UserProfileEndpoint.java`
 
 ### Integration Tests for User Story 1
 
-- [x] T011 [US1] Create `UserProfileEndpointIntegrationTest` extending `TestKitSupport` using `httpClient`: test create user, get user, update user, add preference via REST in `src/test/java/com/example/travel/api/UserProfileEndpointIntegrationTest.java`
+- [x] T011 [US1] Create `UserProfileEndpointIntegrationTest` extending `TestKitSupport` using `httpClient`: test create user, get user, update user, add preference via REST in `src/test/java/com/travelplanner/api/UserProfileEndpointIntegrationTest.java`
 
 **Checkpoint**: User Story 1 fully functional — users can create profiles, update info, add preferences, and retrieve profiles via REST API
 
@@ -75,27 +75,27 @@
 
 ### Domain Layer for User Story 2
 
-- [x] T012 [P] [US2] Create `Trip` state record with tripId, userId, destination, startDate, endDate, budget, plan (TravelPlan), status (TripStatus enum: PLANNED, BOOKED, COMPLETED), and immutable `with*` methods in `src/main/java/com/example/travel/domain/Trip.java`
-- [x] T013 [P] [US2] Create `TripEvent` sealed interface with `TripCreated` event record (with `@TypeName`) in `src/main/java/com/example/travel/domain/TripEvent.java`
+- [x] T012 [P] [US2] Create `Trip` state record with tripId, userId, destination, startDate, endDate, budget, plan (TravelPlan), status (TripStatus enum: PLANNED, BOOKED, COMPLETED), and immutable `with*` methods in `src/main/java/com/travelplanner/domain/Trip.java`
+- [x] T013 [P] [US2] Create `TripEvent` sealed interface with `TripCreated` event record (with `@TypeName`) in `src/main/java/com/travelplanner/domain/TripEvent.java`
 
 ### Application Layer for User Story 2
 
-- [x] T014 [US2] Create `TripEntity` event sourced entity with command handlers: `createTrip` (tripId, userId, destination, dates, budget, plan), `getTrip`; event handler for TripCreated in `src/main/java/com/example/travel/application/TripEntity.java`
-- [x] T015 [US2] Create `TravelPlannerAgent` extending `Agent` with single command handler `generateTravelPlan` that: retrieves user profile via ComponentClient, formats preferences into prompt, sets system message as expert travel planner, uses `responseConformsTo(TravelPlan.class)` for structured response, handles errors with `.onFailure()` in `src/main/java/com/example/travel/application/TravelPlannerAgent.java`
-- [x] T016 [US2] Create `TravelPlannerWorkflow` extending `Workflow` with: state record (tripId, userId, destination, dates, budget, status), `createTravelPlan` command handler, three steps (`generatePlan` calling agent, `storeTrip` calling TripEntity, `updateUserProfile` calling UserProfileEntity), `errorStep` for failure handling; configure `WorkflowSettings` with 120s step timeout and `maxRetries(2)` with failover to errorStep; use workflow ID as agent session ID in `src/main/java/com/example/travel/application/TravelPlannerWorkflow.java`
+- [x] T014 [US2] Create `TripEntity` event sourced entity with command handlers: `createTrip` (tripId, userId, destination, dates, budget, plan), `getTrip`; event handler for TripCreated in `src/main/java/com/travelplanner/application/TripEntity.java`
+- [x] T015 [US2] Create `TravelPlannerAgent` extending `Agent` with single command handler `generateTravelPlan` that: retrieves user profile via ComponentClient, formats preferences into prompt, sets system message as expert travel planner, uses `responseConformsTo(TravelPlan.class)` for structured response, handles errors with `.onFailure()` in `src/main/java/com/travelplanner/application/TravelPlannerAgent.java`
+- [x] T016 [US2] Create `TravelPlannerWorkflow` extending `Workflow` with: state record (tripId, userId, destination, dates, budget, status), `createTravelPlan` command handler, three steps (`generatePlan` calling agent, `storeTrip` calling TripEntity, `updateUserProfile` calling UserProfileEntity), `errorStep` for failure handling; configure `WorkflowSettings` with 120s step timeout and `maxRetries(2)` with failover to errorStep; use workflow ID as agent session ID in `src/main/java/com/travelplanner/application/TravelPlannerWorkflow.java`
 
 ### Tests for User Story 2
 
-- [x] T017 [US2] Create `TripEntityTest` unit tests using `EventSourcedTestKit`: test create trip with plan, get trip, validation in `src/test/java/com/example/travel/application/TripEntityTest.java`
-- [x] T018 [US2] Create `TravelPlannerAgentIntegrationTest` extending `TestKitSupport` with `TestModelProvider`: mock LLM response with sample TravelPlan JSON using `fixedResponse(JsonSupport.encodeToString(...))`, test that agent returns structured TravelPlan in `src/test/java/com/example/travel/application/TravelPlannerAgentIntegrationTest.java`
+- [x] T017 [US2] Create `TripEntityTest` unit tests using `EventSourcedTestKit`: test create trip with plan, get trip, validation in `src/test/java/com/travelplanner/application/TripEntityTest.java`
+- [x] T018 [US2] Create `TravelPlannerAgentIntegrationTest` extending `TestKitSupport` with `TestModelProvider`: mock LLM response with sample TravelPlan JSON using `fixedResponse(JsonSupport.encodeToString(...))`, test that agent returns structured TravelPlan in `src/test/java/com/travelplanner/application/TravelPlannerAgentIntegrationTest.java`
 
 ### API Layer for User Story 2
 
-- [x] T019 [US2] Create `TravelPlannerEndpoint` HTTP endpoint with `@Acl` annotation: `POST /travel-planner/create` (generate UUID tripId, start workflow, return tripId with 201 Created), `GET /travel-planner/trips/{tripId}` (get trip as JSON), `GET /travel-planner/trips/{tripId}/as-text` (get trip as formatted text); validate dates and budget; define request/response records as inner types in `src/main/java/com/example/travel/api/TravelPlannerEndpoint.java`
+- [x] T019 [US2] Create `TravelPlannerEndpoint` HTTP endpoint with `@Acl` annotation: `POST /travel-planner/create` (generate UUID tripId, start workflow, return tripId with 201 Created), `GET /travel-planner/trips/{tripId}` (get trip as JSON), `GET /travel-planner/trips/{tripId}/as-text` (get trip as formatted text); validate dates and budget; define request/response records as inner types in `src/main/java/com/travelplanner/api/TravelPlannerEndpoint.java`
 
 ### Integration Tests for User Story 2
 
-- [x] T020 [US2] Create `TravelPlannerEndpointIntegrationTest` extending `TestKitSupport` with `TestModelProvider` for agent mocking using `httpClient`: test full flow (create user, add preferences, create travel plan, poll for completion, retrieve trip as JSON and as text) in `src/test/java/com/example/travel/api/TravelPlannerEndpointIntegrationTest.java`
+- [x] T020 [US2] Create `TravelPlannerEndpointIntegrationTest` extending `TestKitSupport` with `TestModelProvider` for agent mocking using `httpClient`: test full flow (create user, add preferences, create travel plan, poll for completion, retrieve trip as JSON and as text) in `src/test/java/com/travelplanner/api/TravelPlannerEndpointIntegrationTest.java`
 
 **Checkpoint**: User Story 2 fully functional — complete travel plan generation pipeline works end-to-end with AI agent, workflow orchestration, and trip storage
 
@@ -109,8 +109,8 @@
 
 > Note: The GET endpoints for trip retrieval are already created in T019 as part of the TravelPlannerEndpoint. This phase focuses on ensuring the text formatting logic is complete and tested, and handling error cases.
 
-- [x] T021 [US3] Implement `TravelPlan.asText()` or a `TravelPlanFormatter` utility method that converts the structured TravelPlan into a human-readable text format (day-by-day with accommodation, activities, meals, costs) in `src/main/java/com/example/travel/domain/TravelPlan.java`
-- [x] T022 [US3] Add error handling for non-existent trip IDs in `TravelPlannerEndpoint` — return appropriate HTTP error response in `src/main/java/com/example/travel/api/TravelPlannerEndpoint.java`
+- [x] T021 [US3] Implement `TravelPlan.asText()` or a `TravelPlanFormatter` utility method that converts the structured TravelPlan into a human-readable text format (day-by-day with accommodation, activities, meals, costs) in `src/main/java/com/travelplanner/domain/TravelPlan.java`
+- [x] T022 [US3] Add error handling for non-existent trip IDs in `TravelPlannerEndpoint` — return appropriate HTTP error response in `src/main/java/com/travelplanner/api/TravelPlannerEndpoint.java`
 
 **Checkpoint**: Trip retrieval works in both JSON and text formats with proper error handling
 
@@ -124,8 +124,8 @@
 
 > Note: The workflow with recovery settings is already implemented in T016. This phase focuses on verifying and testing the recovery behavior.
 
-- [x] T023 [US4] Verify `TravelPlannerWorkflow` settings include `maxRetries(2)` and failover to `errorStep`, and that `errorStep` properly records ERROR status in workflow state in `src/main/java/com/example/travel/application/TravelPlannerWorkflow.java`
-- [x] T024 [US4] Create `TravelPlannerWorkflowIntegrationTest` extending `TestKitSupport` with `TestModelProvider`: test successful workflow completion (all 3 steps), test workflow error handling when agent fails (verify error status) in `src/test/java/com/example/travel/application/TravelPlannerWorkflowIntegrationTest.java`
+- [x] T023 [US4] Verify `TravelPlannerWorkflow` settings include `maxRetries(2)` and failover to `errorStep`, and that `errorStep` properly records ERROR status in workflow state in `src/main/java/com/travelplanner/application/TravelPlannerWorkflow.java`
+- [x] T024 [US4] Create `TravelPlannerWorkflowIntegrationTest` extending `TestKitSupport` with `TestModelProvider`: test successful workflow completion (all 3 steps), test workflow error handling when agent fails (verify error status) in `src/test/java/com/travelplanner/application/TravelPlannerWorkflowIntegrationTest.java`
 
 **Checkpoint**: Workflow recovery verified — retries work and error states are properly recorded
 

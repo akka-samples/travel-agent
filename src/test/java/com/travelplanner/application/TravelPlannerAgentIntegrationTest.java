@@ -1,9 +1,9 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import com.example.travel.domain.TravelPlan;
+import com.travelplanner.domain.TravelPlan;
 import akka.javasdk.JsonSupport;
 import org.junit.jupiter.api.Test;
 

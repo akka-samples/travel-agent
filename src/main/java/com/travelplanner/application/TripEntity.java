@@ -1,13 +1,13 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
-import com.example.travel.domain.TravelPlan;
-import com.example.travel.domain.Trip;
-import com.example.travel.domain.TripEvent;
-import com.example.travel.domain.TripEvent.TripCreated;
+import com.travelplanner.domain.TravelPlan;
+import com.travelplanner.domain.Trip;
+import com.travelplanner.domain.TripEvent;
+import com.travelplanner.domain.TripEvent.TripCreated;
 
 import java.time.LocalDate;
 

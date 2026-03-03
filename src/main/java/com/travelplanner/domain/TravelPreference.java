@@ -1,4 +1,4 @@
-package com.example.travel.domain;
+package com.travelplanner.domain;
 
 public record TravelPreference(PreferenceType type, String value, int priority) {
 

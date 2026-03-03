@@ -1,11 +1,11 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.javasdk.agent.Agent;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
-import com.example.travel.domain.TravelPlan;
-import com.example.travel.domain.TravelPreference;
-import com.example.travel.domain.UserProfile;
+import com.travelplanner.domain.TravelPlan;
+import com.travelplanner.domain.TravelPreference;
+import com.travelplanner.domain.UserProfile;
 
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;

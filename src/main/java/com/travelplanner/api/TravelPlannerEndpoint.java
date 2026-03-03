@@ -1,4 +1,4 @@
-package com.example.travel.api;
+package com.travelplanner.api;
 
 import akka.http.javadsl.model.HttpResponse;
 import akka.javasdk.annotations.Acl;
@@ -8,13 +8,12 @@ import akka.javasdk.annotations.http.Post;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.http.HttpException;
 import akka.javasdk.http.HttpResponses;
-import com.example.travel.application.TravelPlannerWorkflow;
-import com.example.travel.application.TripEntity;
-import com.example.travel.domain.TravelPlan;
-import com.example.travel.domain.Trip;
+import com.travelplanner.application.TravelPlannerWorkflow;
+import com.travelplanner.application.TripEntity;
+import com.travelplanner.domain.TravelPlan;
+import com.travelplanner.domain.Trip;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 @HttpEndpoint("/travel-planner")

@@ -1,9 +1,9 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
-import com.example.travel.domain.TravelPlan;
-import com.example.travel.domain.TripEvent.TripCreated;
+import com.travelplanner.domain.TravelPlan;
+import com.travelplanner.domain.TripEvent.TripCreated;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -48,7 +48,7 @@ class TripEntityTest {
     assertThat(state.tripId()).isEqualTo("trip-1");
     assertThat(state.destination()).isEqualTo("Paris");
     assertThat(state.plan().summary()).isEqualTo("A wonderful trip");
-    assertThat(state.status()).isEqualTo(com.example.travel.domain.Trip.TripStatus.PLANNED);
+    assertThat(state.status()).isEqualTo(com.travelplanner.domain.Trip.TripStatus.PLANNED);
   }
 
   @Test

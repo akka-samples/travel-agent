@@ -1,15 +1,14 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.Done;
 import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
-import com.example.travel.domain.TravelPlan;
+import com.travelplanner.domain.TravelPlan;
 
 import java.time.LocalDate;
 
-import static akka.javasdk.workflow.Workflow.RecoverStrategy.maxRetries;
 import static java.time.Duration.ofSeconds;
 
 @Component(id = "travel-planner-workflow")

@@ -1,10 +1,10 @@
-package com.example.travel.api;
+package com.travelplanner.api;
 
 import akka.javasdk.testkit.TestKitSupport;
-import com.example.travel.api.UserProfileEndpoint.AddPreferenceRequest;
-import com.example.travel.api.UserProfileEndpoint.CreateUserRequest;
-import com.example.travel.api.UserProfileEndpoint.UpdateUserRequest;
-import com.example.travel.api.UserProfileEndpoint.UserProfileResponse;
+import com.travelplanner.api.UserProfileEndpoint.AddPreferenceRequest;
+import com.travelplanner.api.UserProfileEndpoint.CreateUserRequest;
+import com.travelplanner.api.UserProfileEndpoint.UpdateUserRequest;
+import com.travelplanner.api.UserProfileEndpoint.UserProfileResponse;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

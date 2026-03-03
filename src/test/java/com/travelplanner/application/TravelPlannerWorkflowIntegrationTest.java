@@ -1,11 +1,11 @@
-package com.example.travel.application;
+package com.travelplanner.application;
 
 import akka.javasdk.JsonSupport;
 import akka.javasdk.testkit.TestKit;
 import akka.javasdk.testkit.TestKitSupport;
 import akka.javasdk.testkit.TestModelProvider;
-import com.example.travel.domain.TravelPlan;
-import com.example.travel.domain.Trip;
+import com.travelplanner.domain.TravelPlan;
+import com.travelplanner.domain.Trip;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.Test;
 
