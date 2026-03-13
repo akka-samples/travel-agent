@@ -1,70 +1,46 @@
 package com.travelplanner.domain;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-/**
- * Domain model representing a user profile with travel preferences.
- */
 public record UserProfile(
-    String userId,
-    String name,
-    String email,
-    List<TravelPreference> preferences,
-    List<String> pastTripIds
+  String userId,
+  String name,
+  String email,
+  List<TravelPreference> preferences,
+  List<String> pastTripIds
 ) {
-  /**
-   * Constructor with defensive copying for mutable collections.
-   */
-  public UserProfile {
-    preferences = preferences != null ? new ArrayList<>(preferences) : new ArrayList<>();
-    pastTripIds = pastTripIds != null ? new ArrayList<>(pastTripIds) : new ArrayList<>();
-  }
-
-  /**
-   * Factory method for creating a new user profile.
-   */
   public static UserProfile create(String userId, String name, String email) {
-    return new UserProfile(userId, name, email, new ArrayList<>(), new ArrayList<>());
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("Name must not be empty");
+    }
+    if (email == null || email.isBlank()) {
+      throw new IllegalArgumentException("Email must not be empty");
+    }
+    return new UserProfile(userId, name, email, List.of(), List.of());
   }
 
-  /**
-   * Returns a new UserProfile with updated name and email.
-   */
-  public UserProfile withNameAndEmail(String newName, String newEmail) {
-    return new UserProfile(userId, newName, newEmail, preferences, pastTripIds);
+  public UserProfile withName(String name) {
+    return new UserProfile(userId, name, email, preferences, pastTripIds);
   }
 
-  /**
-   * Returns a new UserProfile with an added preference.
-   */
+  public UserProfile withEmail(String email) {
+    return new UserProfile(userId, name, email, preferences, pastTripIds);
+  }
+
+  public UserProfile withNameAndEmail(String name, String email) {
+    return new UserProfile(userId, name, email, preferences, pastTripIds);
+  }
+
   public UserProfile withAddedPreference(TravelPreference preference) {
-    List<TravelPreference> updatedPreferences = new ArrayList<>(preferences);
-    updatedPreferences.add(preference);
-    return new UserProfile(userId, name, email, updatedPreferences, pastTripIds);
+    var updated = new ArrayList<>(preferences);
+    updated.add(preference);
+    return new UserProfile(userId, name, email, updated, pastTripIds);
   }
 
-  /**
-   * Returns a new UserProfile with an added trip to history.
-   */
-  public UserProfile withAddedTrip(String tripId) {
-    List<String> updatedTrips = new ArrayList<>(pastTripIds);
-    updatedTrips.add(tripId);
-    return new UserProfile(userId, name, email, preferences, updatedTrips);
-  }
-
-  /**
-   * Returns an unmodifiable view of the preferences.
-   */
-  public List<TravelPreference> getPreferences() {
-    return Collections.unmodifiableList(preferences);
-  }
-
-  /**
-   * Returns an unmodifiable view of the past trip IDs.
-   */
-  public List<String> getPastTripIds() {
-    return Collections.unmodifiableList(pastTripIds);
+  public UserProfile withAddedTripId(String tripId) {
+    var updated = new ArrayList<>(pastTripIds);
+    updated.add(tripId);
+    return new UserProfile(userId, name, email, preferences, updated);
   }
 }

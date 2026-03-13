@@ -1,127 +1,80 @@
 package com.travelplanner.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.travelplanner.domain.UserProfile;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import com.travelplanner.domain.TravelPreference;
 import com.travelplanner.domain.UserEvent;
+import com.travelplanner.domain.UserEvent.TravelPreferenceAdded;
+import com.travelplanner.domain.UserEvent.TripCompleted;
+import com.travelplanner.domain.UserEvent.UserProfileCreated;
+import com.travelplanner.domain.UserEvent.UserProfileUpdated;
+import com.travelplanner.domain.UserProfile;
 
-import static akka.Done.done;
-
-/**
- * Entity for managing user profiles in the travel planner service.
- */
-@ComponentId("user-profile")
+@Component(id = "user-profile")
 public class UserProfileEntity extends EventSourcedEntity<UserProfile, UserEvent> {
 
-  private final Logger logger = LoggerFactory.getLogger(getClass());
+  private final String entityId;
 
-  // Command records defined within the entity
-  public record CreateUserProfile(
-      String userId,
-      String name,
-      String email
-  ) {
+  public UserProfileEntity(EventSourcedEntityContext context) {
+    this.entityId = context.entityId();
   }
 
-  public record UpdateUserProfile(
-      String name,
-      String email
-  ) {
+  @Override
+  public UserProfile emptyState() {
+    return null;
   }
 
-  public record AddTravelPreference(
-      TravelPreference preference
-  ) {
-  }
+  public record CreateCommand(String name, String email) {}
 
-  public record AddCompletedTrip(
-      String tripId
-  ) {
-  }
-
-  /**
-   * Creates a new user profile.
-   */
-  public Effect<Done> createUserProfile(CreateUserProfile cmd) {
-    if (cmd.name() == null || cmd.name().isBlank()) {
-      return effects().error("Name cannot be empty");
-    }
-
-    if (cmd.email() == null || cmd.email().isBlank()) {
-      return effects().error("Email cannot be empty");
-    }
-
+  public Effect<Done> createUserProfile(CreateCommand command) {
     if (currentState() != null) {
-      logger.info("User profile already exists: {}", cmd.userId());
-      return effects().reply(done());
+      return effects().error("User profile already exists");
     }
-
-    logger.info("Creating user profile: {}", cmd);
+    if (command.name() == null || command.name().isBlank()) {
+      return effects().error("Name must not be empty");
+    }
+    if (command.email() == null || command.email().isBlank()) {
+      return effects().error("Email must not be empty");
+    }
     return effects()
-        .persist(new UserEvent.UserProfileCreated(cmd.userId(), cmd.name(), cmd.email()))
-        .thenReply(__ -> done());
+      .persist(new UserProfileCreated(entityId, command.name(), command.email()))
+      .thenReply(state -> Done.getInstance());
   }
 
-  /**
-   * Updates an existing user profile.
-   */
-  public Effect<Done> updateUserProfile(UpdateUserProfile cmd) {
+  public record UpdateCommand(String name, String email) {}
+
+  public Effect<Done> updateUserProfile(UpdateCommand command) {
     if (currentState() == null) {
-      return effects().error("User profile not found");
+      return effects().error("User profile does not exist");
     }
-
-    if (cmd.name() == null || cmd.name().isBlank()) {
-      return effects().error("Name cannot be empty");
-    }
-
-    if (cmd.email() == null || cmd.email().isBlank()) {
-      return effects().error("Email cannot be empty");
-    }
-
-    logger.info("Updating user profile: {}", cmd);
     return effects()
-        .persist(new UserEvent.UserProfileUpdated(currentState().userId(), cmd.name(), cmd.email()))
-        .thenReply(__ -> done());
+      .persist(new UserProfileUpdated(command.name(), command.email()))
+      .thenReply(state -> Done.getInstance());
   }
 
-  /**
-   * Adds a travel preference to the user profile.
-   */
-  public Effect<Done> addTravelPreference(AddTravelPreference cmd) {
+  public Effect<Done> addTravelPreference(TravelPreference preference) {
     if (currentState() == null) {
-      return effects().error("User profile not found");
+      return effects().error("User profile does not exist");
     }
-
-    logger.info("Adding travel preference: {}", cmd.preference());
     return effects()
-        .persist(new UserEvent.TravelPreferenceAdded(currentState().userId(), cmd.preference()))
-        .thenReply(__ -> done());
+      .persist(new TravelPreferenceAdded(preference))
+      .thenReply(state -> Done.getInstance());
   }
 
-  /**
-   * Adds a completed trip to the user's history.
-   */
-  public Effect<Done> addCompletedTrip(AddCompletedTrip cmd) {
+  public Effect<Done> addCompletedTrip(String tripId) {
     if (currentState() == null) {
-      return effects().error("User profile not found");
+      return effects().error("User profile does not exist");
     }
-
-    logger.info("Adding completed trip: {}", cmd.tripId());
     return effects()
-        .persist(new UserEvent.TripCompleted(currentState().userId(), cmd.tripId()))
-        .thenReply(__ -> done());
+      .persist(new TripCompleted(tripId))
+      .thenReply(state -> Done.getInstance());
   }
 
-  /**
-   * Gets the current user profile.
-   */
   public ReadOnlyEffect<UserProfile> getUserProfile() {
     if (currentState() == null) {
-      return effects().error("User profile not found");
+      return effects().error("User profile does not exist");
     }
     return effects().reply(currentState());
   }
@@ -129,13 +82,10 @@ public class UserProfileEntity extends EventSourcedEntity<UserProfile, UserEvent
   @Override
   public UserProfile applyEvent(UserEvent event) {
     return switch (event) {
-      case UserEvent.UserProfileCreated evt -> UserProfile.create(evt.userId(), evt.name(), evt.email());
-
-      case UserEvent.UserProfileUpdated evt -> currentState().withNameAndEmail(evt.name(), evt.email());
-
-      case UserEvent.TravelPreferenceAdded evt -> currentState().withAddedPreference(evt.preference());
-
-      case UserEvent.TripCompleted evt -> currentState().withAddedTrip(evt.tripId());
+      case UserProfileCreated e -> UserProfile.create(e.userId(), e.name(), e.email());
+      case UserProfileUpdated e -> currentState().withNameAndEmail(e.name(), e.email());
+      case TravelPreferenceAdded e -> currentState().withAddedPreference(e.preference());
+      case TripCompleted e -> currentState().withAddedTripId(e.tripId());
     };
   }
 }
