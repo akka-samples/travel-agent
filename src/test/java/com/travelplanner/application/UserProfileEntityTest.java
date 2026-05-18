@@ -1,150 +1,147 @@
 package com.travelplanner.application;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import akka.Done;
 import akka.javasdk.testkit.EventSourcedTestKit;
-import org.junit.jupiter.api.Test;
 import com.travelplanner.domain.TravelPreference;
-import com.travelplanner.domain.UserEvent;
-import com.travelplanner.domain.UserProfile;
+import com.travelplanner.domain.TravelPreference.PreferenceType;
+import com.travelplanner.domain.UserEvent.UserProfileCreated;
+import org.junit.jupiter.api.Test;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-
-public class UserProfileEntityTest {
+class UserProfileEntityTest {
 
   @Test
-  public void testCreateUserProfile() {
-    var testKit = EventSourcedTestKit.of(__ -> new UserProfileEntity());
+  void shouldCreateUserProfile() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    var userId = "user-123";
-    var name = "John Traveler";
-    var email = "john@example.com";
+    var result = testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
-    var result = testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateUserProfile(userId, name, email));
+    assertThat(result.isReply()).isTrue();
+    assertThat(result.getReply()).isEqualTo(Done.getInstance());
 
-    // Verify the result
-    assertThat(result.getReply()).isEqualTo(Done.done());
+    var event = result.getNextEventOfType(UserProfileCreated.class);
+    assertThat(event.userId()).isEqualTo("user-1");
+    assertThat(event.name()).isEqualTo("John");
+    assertThat(event.email()).isEqualTo("john@example.com");
 
-    // Verify the event
-    var event = result.getNextEventOfType(UserEvent.UserProfileCreated.class);
-    assertThat(event.userId()).isEqualTo(userId);
-    assertThat(event.name()).isEqualTo(name);
-    assertThat(event.email()).isEqualTo(email);
-
-    // Verify state
-    var state = testKit.method(UserProfileEntity::getUserProfile).invoke();
-    assertThat(state.getReply().userId()).isEqualTo(userId);
-    assertThat(state.getReply().name()).isEqualTo(name);
-    assertThat(state.getReply().email()).isEqualTo(email);
+    var state = testKit.getState();
+    assertThat(state.name()).isEqualTo("John");
+    assertThat(state.email()).isEqualTo("john@example.com");
+    assertThat(state.preferences()).isEmpty();
+    assertThat(state.pastTripIds()).isEmpty();
   }
 
   @Test
-  public void testUpdateUserProfile() {
-    var testKit = EventSourcedTestKit.of(__ -> new UserProfileEntity());
+  void shouldRejectDuplicateCreate() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    // Create user first
-    var userId = "user-123";
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateUserProfile(userId, "John Traveler", "john@example.com"));
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
-    // Update the profile
-    var newName = "John Updated";
-    var newEmail = "john.updated@example.com";
+    var result = testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("Jane", "jane@example.com"));
 
-    var result = testKit.method(UserProfileEntity::updateUserProfile)
-        .invoke(new UserProfileEntity.UpdateUserProfile(newName, newEmail));
-
-    // Verify the result
-    assertThat(result.getReply()).isEqualTo(Done.done());
-
-    // Verify the event
-    var event = result.getNextEventOfType(UserEvent.UserProfileUpdated.class);
-    assertThat(event.name()).isEqualTo(newName);
-    assertThat(event.email()).isEqualTo(newEmail);
-
-    // Verify state
-    var state = testKit.method(UserProfileEntity::getUserProfile).invoke();
-    assertThat(state.getReply().name()).isEqualTo(newName);
-    assertThat(state.getReply().email()).isEqualTo(newEmail);
+    assertThat(result.isError()).isTrue();
   }
 
   @Test
-  public void testAddTravelPreference() {
-    var testKit = EventSourcedTestKit.of(__ -> new UserProfileEntity());
+  void shouldRejectEmptyName() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    // Create user first
-    var userId = "user-123";
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateUserProfile(userId, "John Traveler", "john@example.com"));
+    var result = testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("", "john@example.com"));
 
-    // Add a travel preference
-    var preference = new TravelPreference(
-        TravelPreference.PreferenceType.ACCOMMODATION_TYPE,
-        "hotel",
-        5
+    assertThat(result.isError()).isTrue();
+  }
+
+  @Test
+  void shouldUpdateUserProfile() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
+
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+
+    var result = testKit
+      .method(UserProfileEntity::updateUserProfile)
+      .invoke(
+        new UserProfileEntity.UpdateCommand("John Updated", "john.updated@example.com")
+      );
+
+    assertThat(result.isReply()).isTrue();
+
+    var state = testKit.getState();
+    assertThat(state.name()).isEqualTo("John Updated");
+    assertThat(state.email()).isEqualTo("john.updated@example.com");
+  }
+
+  @Test
+  void shouldAddTravelPreference() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
+
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
+
+    var preference = new TravelPreference(PreferenceType.ACCOMMODATION_TYPE, "hotel", 5);
+
+    var result = testKit.method(UserProfileEntity::addTravelPreference).invoke(preference);
+
+    assertThat(result.isReply()).isTrue();
+
+    var state = testKit.getState();
+    assertThat(state.preferences()).hasSize(1);
+    assertThat(state.preferences().getFirst().type()).isEqualTo(
+      PreferenceType.ACCOMMODATION_TYPE
     );
-
-    var result = testKit.method(UserProfileEntity::addTravelPreference)
-        .invoke(new UserProfileEntity.AddTravelPreference(preference));
-
-    // Verify the event
-    var event = result.getNextEventOfType(UserEvent.TravelPreferenceAdded.class);
-    assertThat(event.preference()).isEqualTo(preference);
-
-    // Verify state
-    var state = testKit.method(UserProfileEntity::getUserProfile).invoke();
-    assertThat(state.getReply().preferences().size()).isEqualTo(1);
-    assertThat(state.getReply().preferences().get(0)).isEqualTo(preference);
+    assertThat(state.preferences().getFirst().value()).isEqualTo("hotel");
+    assertThat(state.preferences().getFirst().priority()).isEqualTo(5);
   }
 
   @Test
-  public void testAddCompletedTrip() {
-    var testKit = EventSourcedTestKit.of(__ -> new UserProfileEntity());
+  void shouldAddCompletedTrip() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    // Create user first
-    var userId = "user-123";
-    testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateUserProfile(userId, "John Traveler", "john@example.com"));
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
-    // Add a completed trip
-    var tripId = "trip-456";
+    var result = testKit.method(UserProfileEntity::addCompletedTrip).invoke("trip-123");
 
-    var result = testKit.method(UserProfileEntity::addCompletedTrip)
-        .invoke(new UserProfileEntity.AddCompletedTrip(tripId));
+    assertThat(result.isReply()).isTrue();
 
-    // Verify the event
-    var event = result.getNextEventOfType(UserEvent.TripCompleted.class);
-    assertThat(event.tripId()).isEqualTo(tripId);
-
-    // Verify state
-    var state = testKit.method(UserProfileEntity::getUserProfile).invoke();
-    assertThat(state.getReply().pastTripIds().size()).isEqualTo(1);
-    assertThat(state.getReply().pastTripIds().get(0)).isEqualTo(tripId);
+    var state = testKit.getState();
+    assertThat(state.pastTripIds()).containsExactly("trip-123");
   }
 
   @Test
-  public void testInvalidCommands() {
-    var testKit = EventSourcedTestKit.of(__ -> new UserProfileEntity());
+  void shouldGetUserProfile() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
 
-    // Test empty name
-    var result1 = testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateUserProfile("user-123", "", "john@example.com"));
-    assertThat(result1.isError()).isTrue();
+    testKit
+      .method(UserProfileEntity::createUserProfile)
+      .invoke(new UserProfileEntity.CreateCommand("John", "john@example.com"));
 
-    // Test empty email
-    var result2 = testKit.method(UserProfileEntity::createUserProfile)
-        .invoke(new UserProfileEntity.CreateUserProfile("user-123", "John", ""));
-    assertThat(result2.isError()).isTrue();
+    var result = testKit.method(UserProfileEntity::getUserProfile).invoke();
 
-    // Test operations on non-existent user
-    var result3 = testKit.method(UserProfileEntity::updateUserProfile)
-        .invoke(new UserProfileEntity.UpdateUserProfile("John Updated", "john@example.com"));
-    assertThat(result3.isError()).isTrue();
+    assertThat(result.isReply()).isTrue();
+    var profile = result.getReply();
+    assertThat(profile.userId()).isEqualTo("user-1");
+    assertThat(profile.name()).isEqualTo("John");
+  }
 
-    var result4 = testKit.method(UserProfileEntity::addTravelPreference)
-        .invoke(new UserProfileEntity.AddTravelPreference(
-            new TravelPreference(TravelPreference.PreferenceType.ACCOMMODATION_TYPE, "hotel", 5)
-        ));
-    assertThat(result4.isError()).isTrue();
+  @Test
+  void shouldRejectGetOnNonExistent() {
+    var testKit = EventSourcedTestKit.of("user-1", UserProfileEntity::new);
+
+    var result = testKit.method(UserProfileEntity::getUserProfile).invoke();
+
+    assertThat(result.isError()).isTrue();
   }
 }

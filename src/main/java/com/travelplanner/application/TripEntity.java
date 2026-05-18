@@ -1,133 +1,61 @@
 package com.travelplanner.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
+import akka.javasdk.eventsourcedentity.EventSourcedEntityContext;
 import com.travelplanner.domain.TravelPlan;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.travelplanner.domain.Trip;
 import com.travelplanner.domain.TripEvent;
-
+import com.travelplanner.domain.TripEvent.TripCreated;
 import java.time.LocalDate;
 
-import static akka.Done.done;
-
-/**
- * Entity for managing trips in the travel planner service.
- */
-@ComponentId("trip")
+@Component(id = "trip")
 public class TripEntity extends EventSourcedEntity<Trip, TripEvent> {
 
-  private final Logger logger = LoggerFactory.getLogger(getClass());
+  private final String entityId;
 
-  // Command records
-  public record CreateTrip(
-      String tripId,
-      String userId,
-      String destination,
-      LocalDate startDate,
-      LocalDate endDate,
-      double budget,
-      TravelPlan generatedPlan
-  ) {
+  public TripEntity(EventSourcedEntityContext context) {
+    this.entityId = context.entityId();
   }
 
-  public record UpdateTripPlan(
-      TravelPlan generatedPlan
-  ) {
+  @Override
+  public Trip emptyState() {
+    return null;
   }
 
-  public record MarkTripAsBooked() {
-  }
+  public record CreateTripCommand(
+    String tripId,
+    String userId,
+    String destination,
+    LocalDate startDate,
+    LocalDate endDate,
+    double budget,
+    TravelPlan plan
+  ) {}
 
-  public record MarkTripAsCompleted() {
-  }
-
-  /**
-   * Creates a new trip with a generated plan.
-   */
-  public Effect<Done> createTrip(CreateTrip cmd) {
+  public Effect<Done> createTrip(CreateTripCommand command) {
     if (currentState() != null) {
-      logger.info("Trip already exists: {}", cmd.tripId());
-      return effects().reply(done());
+      return effects().error("Trip already exists");
     }
-
-    logger.info("Creating trip: {}", cmd.tripId());
     return effects()
-        .persist(new TripEvent.TripCreated(
-            cmd.tripId(),
-            cmd.userId(),
-            cmd.destination(),
-            cmd.startDate(),
-            cmd.endDate(),
-            cmd.budget(),
-            cmd.generatedPlan()
-        ))
-        .thenReply(__ -> done());
+      .persist(
+        new TripCreated(
+          command.tripId(),
+          command.userId(),
+          command.destination(),
+          command.startDate(),
+          command.endDate(),
+          command.budget(),
+          command.plan()
+        )
+      )
+      .thenReply(state -> Done.getInstance());
   }
 
-  /**
-   * Updates the generated plan for a trip.
-   */
-  public Effect<Done> updateTripPlan(UpdateTripPlan cmd) {
-    if (currentState() == null) {
-      return effects().error("Trip not found");
-    }
-
-    logger.info("Updating trip plan: {}", currentState().tripId());
-    return effects()
-        .persist(new TripEvent.TripPlanUpdated(
-            currentState().tripId(),
-            cmd.generatedPlan()
-        ))
-        .thenReply(__ -> done());
-  }
-
-  /**
-   * Marks a trip as booked.
-   */
-  public Effect<Done> markTripAsBooked(MarkTripAsBooked cmd) {
-    if (currentState() == null) {
-      return effects().error("Trip not found");
-    }
-
-    if (currentState().status() == Trip.TripStatus.BOOKED) {
-      logger.info("Trip already booked: {}", currentState().tripId());
-      return effects().reply(done());
-    }
-
-    logger.info("Marking trip as booked: {}", currentState().tripId());
-    return effects()
-        .persist(new TripEvent.TripBooked(currentState().tripId()))
-        .thenReply(__ -> done());
-  }
-
-  /**
-   * Marks a trip as completed.
-   */
-  public Effect<Done> markTripAsCompleted(MarkTripAsCompleted cmd) {
-    if (currentState() == null) {
-      return effects().error("Trip not found");
-    }
-
-    if (currentState().status() == Trip.TripStatus.COMPLETED) {
-      logger.info("Trip already completed: {}", currentState().tripId());
-      return effects().reply(done());
-    }
-
-    logger.info("Marking trip as completed: {}", currentState().tripId());
-    return effects()
-        .persist(new TripEvent.TripCompleted(currentState().tripId()))
-        .thenReply(__ -> done());
-  }
-
-  /**
-   * Gets the current trip.
-   */
   public ReadOnlyEffect<Trip> getTrip() {
     if (currentState() == null) {
-      return effects().error("Trip not found");
+      return effects().error("Trip does not exist");
     }
     return effects().reply(currentState());
   }
@@ -135,21 +63,15 @@ public class TripEntity extends EventSourcedEntity<Trip, TripEvent> {
   @Override
   public Trip applyEvent(TripEvent event) {
     return switch (event) {
-      case TripEvent.TripCreated evt -> Trip.create(
-          evt.tripId(),
-          evt.userId(),
-          evt.destination(),
-          evt.startDate(),
-          evt.endDate(),
-          evt.budget(),
-          evt.generatedPlan()
+      case TripCreated e -> Trip.create(
+        e.tripId(),
+        e.userId(),
+        e.destination(),
+        e.startDate(),
+        e.endDate(),
+        e.budget(),
+        e.plan()
       );
-
-      case TripEvent.TripPlanUpdated evt -> currentState().withUpdatedPlan(evt.generatedPlan());
-
-      case TripEvent.TripBooked evt -> currentState().withStatus(Trip.TripStatus.BOOKED);
-
-      case TripEvent.TripCompleted evt -> currentState().withStatus(Trip.TripStatus.COMPLETED);
     };
   }
 }

@@ -1,177 +1,122 @@
 package com.travelplanner.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import com.travelplanner.domain.TravelPlan;
 import com.travelplanner.domain.TravelPreference;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.time.Duration;
+import com.travelplanner.domain.UserProfile;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Agent that generates personalized travel plans using LLM and user preferences.
- * Retrieves user profile and uses that as preferences in the request to the LLM.
- */
-@ComponentId("travel-planner-agent")
+@Component(id = "travel-planner-agent")
 public class TravelPlannerAgent extends Agent {
 
-  private static final String SYSTEM_MESSAGE =
-      """
-      You are an expert travel planner assistant. Your job is to create detailed, personalized travel itineraries
-      based on user preferences and trip parameters. Focus on providing practical, actionable plans that match
-      the user's preferences for accommodations, transportation, activities, and cuisine.
-
-      IMPORTANT: You must respond with a valid JSON object that follows this structure:
-      {
-        "summary": "Brief overview of the trip",
-        "totalEstimatedCost": 1234.56,
-        "days": [
-          {
-            "dayNumber": 1,
-            "date": "YYYY-MM-DD",
-            "accommodation": {
-              "name": "Hotel/Hostel name",
-              "description": "Brief description",
-              "estimatedCost": 123.45
-            },
-            "transportation": [
-              {
-                "type": "FLIGHT/TRAIN/BUS/etc",
-                "description": "From A to B",
-                "estimatedCost": 123.45
-              }
-            ],
-            "activities": [
-              {
-                "name": "Activity name",
-                "description": "Brief description",
-                "estimatedCost": 123.45,
-                "timeOfDay": "MORNING/AFTERNOON/EVENING"
-              }
-            ],
-            "meals": [
-              {
-                "type": "BREAKFAST/LUNCH/DINNER",
-                "suggestion": "Restaurant or food suggestion",
-                "estimatedCost": 123.45
-              }
-            ],
-            "dailyEstimatedCost": 123.45
-          }
-        ]
-      }
-
-      Do not include any explanations or text outside of the JSON structure.
-      """.stripIndent();
-
-  public record Request(
-      String userId,
-      String destination,
-      LocalDate startDate,
-      LocalDate endDate,
-      double budget) {
-  }
-
-  private final Logger logger = LoggerFactory.getLogger(getClass());
   private final ComponentClient componentClient;
 
   public TravelPlannerAgent(ComponentClient componentClient) {
     this.componentClient = componentClient;
   }
 
-  /**
-   * Generate a travel plan for a user based on their profile and trip parameters.
-   */
-  public Effect<TravelPlan> generateTravelPlan(Request request) {
+  public record GenerateRequest(
+    String userId,
+    String destination,
+    LocalDate startDate,
+    LocalDate endDate,
+    double budget
+  ) {}
 
-    logger.info("Generating travel plan for user {} to {}", request.userId, request.destination);
+  public Effect<TravelPlan> generateTravelPlan(GenerateRequest request) {
+    UserProfile profile = null;
+    try {
+      profile = componentClient
+        .forEventSourcedEntity(request.userId())
+        .method(UserProfileEntity::getUserProfile)
+        .invoke();
+    } catch (Exception e) {
+      // User may not have a profile; proceed without preferences
+    }
 
-    // First, retrieve the user profile to get preferences
-    var userProfile =
-        componentClient.forEventSourcedEntity(request.userId)
-            .method(UserProfileEntity::getUserProfile)
-            .invoke();
+    long tripDays = ChronoUnit.DAYS.between(request.startDate(), request.endDate());
+    String preferencesText = formatPreferences(profile);
 
-    // Format user preferences for the prompt
-    var preferencesText = formatUserPreferences(userProfile.preferences());
+    String systemMsg =
+      """
+      You are an expert travel planner. Create a detailed day-by-day travel itinerary.
+      Return ONLY a valid JSON response conforming to the requested schema.
+      Include realistic accommodation, transportation, activities, and meal recommendations.
+      Ensure the total estimated cost stays within the given budget.
+      Make recommendations that align with the user's preferences when provided.
+      """;
 
-    // Calculate trip duration
-    int tripDuration = (int) Duration.between(
-        request.startDate.atStartOfDay(),
-        request.endDate.atStartOfDay().plusDays(1)
-    ).toDays();
-
-    // Create a detailed trip description
-    var tripDetails = String.format(
-            """
-            I need a travel plan with the following details:
-            
-            USER: %s
-            DESTINATION: %s
-            DATES: %s to %s (%d days)
-            BUDGET: $%.2f
-
-            USER PREFERENCES:
-            %s
-
-            Please create a detailed day-by-day itinerary that matches these preferences and budget.
-            """.stripIndent(),
-        userProfile.name(),
-        request.destination,
-        request.startDate,
-        request.endDate,
-        tripDuration,
-        request.budget,
-        preferencesText
+    String userMsg = String.format(
+      """
+      Plan a %d-day trip to %s from %s to %s with a budget of $%.2f.
+      %s
+      Create a detailed day-by-day itinerary with accommodation, transportation, activities (with time of day), and meals for each day.
+      Include estimated costs for each item and ensure the total stays within budget.
+      """,
+      tripDays,
+      request.destination(),
+      request.startDate(),
+      request.endDate(),
+      request.budget(),
+      preferencesText
     );
 
     return effects()
-        .systemMessage(SYSTEM_MESSAGE)
-        .userMessage(tripDetails)
-        .responseAs(TravelPlan.class)
-        .thenReply();
+      .systemMessage(systemMsg)
+      .userMessage(userMsg)
+      .responseConformsTo(TravelPlan.class)
+      .onFailure(
+        throwable ->
+          new TravelPlan(
+            "Unable to generate travel plan: " + throwable.getMessage(),
+            0.0,
+            List.of()
+          )
+      )
+      .thenReply();
   }
 
-  private String formatUserPreferences(List<TravelPreference> preferences) {
-    if (preferences.isEmpty()) {
+  private String formatPreferences(UserProfile profile) {
+    if (profile == null || profile.preferences().isEmpty()) {
       return "No specific preferences provided.";
     }
 
-    // Group preferences by type
-    Map<TravelPreference.PreferenceType, List<TravelPreference>> groupedPreferences =
-        preferences.stream()
-            .collect(Collectors.groupingBy(TravelPreference::type));
+    Map<TravelPreference.PreferenceType, List<TravelPreference>> grouped = profile
+      .preferences()
+      .stream()
+      .collect(Collectors.groupingBy(TravelPreference::type));
 
-    var sb = new StringBuilder();
-
-    // Format each preference type
-    for (var entry : groupedPreferences.entrySet()) {
-      sb.append("- ").append(formatPreferenceType(entry.getKey())).append(": ");
-
-      String values = entry.getValue().stream()
-          .map(pref -> pref.value() + " (priority: " + pref.priority() + ")")
-          .collect(Collectors.joining(", "));
-
-      sb.append(values).append("\n");
+    var sb = new StringBuilder("User preferences:\n");
+    if (profile.name() != null) {
+      sb.append("- Name: ").append(profile.name()).append("\n");
     }
 
-    return sb.toString();
-  }
+    grouped.forEach((type, prefs) -> {
+      String label =
+        switch (type) {
+          case ACCOMMODATION_TYPE -> "Accommodation";
+          case TRANSPORTATION_TYPE -> "Transportation";
+          case CUISINE -> "Food & Dining";
+          case ACTIVITY -> "Activities";
+          case CLIMATE -> "Climate preference";
+          case BUDGET_RANGE -> "Budget style";
+        };
+      sb.append("- ").append(label).append(": ");
+      sb.append(
+        prefs
+          .stream()
+          .map(p -> p.value() + " (priority: " + p.priority() + ")")
+          .collect(Collectors.joining(", "))
+      );
+      sb.append("\n");
+    });
 
-  private String formatPreferenceType(TravelPreference.PreferenceType type) {
-    return switch (type) {
-      case ACCOMMODATION_TYPE -> "Accommodation";
-      case TRANSPORTATION_TYPE -> "Transportation";
-      case CUISINE -> "Food preferences";
-      case ACTIVITY -> "Activities";
-      case CLIMATE -> "Climate preferences";
-      case BUDGET_RANGE -> "Budget level";
-    };
+    return sb.toString();
   }
 }
