@@ -1,7 +1,7 @@
 package com.travelplanner.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.eventsourcedentity.EventSourcedEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +14,7 @@ import static akka.Done.done;
 /**
  * Entity for managing user profiles in the travel planner service.
  */
-@ComponentId("user-profile")
+@Component(id = "user-profile")
 public class UserProfileEntity extends EventSourcedEntity<UserProfile, UserEvent> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
