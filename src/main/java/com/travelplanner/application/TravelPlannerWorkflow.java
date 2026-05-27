@@ -1,7 +1,7 @@
 package com.travelplanner.application;
 
 import akka.Done;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.annotations.StepName;
 import akka.javasdk.client.ComponentClient;
 import akka.javasdk.workflow.Workflow;
@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Workflow that coordinates the travel planning process.
  */
-@ComponentId("travel-planner-workflow")
+@Component(id = "travel-planner-workflow")
 public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State> {
 
   private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -71,7 +71,7 @@ public class TravelPlannerWorkflow extends Workflow<TravelPlannerWorkflow.State>
   @Override
   public WorkflowSettings settings() {
     return WorkflowSettings.builder()
-      .defaultStepRecovery(maxRetries(2).failoverTo(TravelPlannerWorkflow::errorStep))
+      .defaultStepRecovery(RecoverStrategy.maxRetries(2).failoverTo(TravelPlannerWorkflow::errorStep))
       .stepTimeout(TravelPlannerWorkflow::generatePlan, Duration.ofSeconds(120))
       .build();
   }

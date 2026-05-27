@@ -1,7 +1,7 @@
 package com.travelplanner.application;
 
 import akka.javasdk.agent.Agent;
-import akka.javasdk.annotations.ComponentId;
+import akka.javasdk.annotations.Component;
 import akka.javasdk.client.ComponentClient;
 import com.travelplanner.domain.TravelPlan;
 import com.travelplanner.domain.TravelPreference;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * Agent that generates personalized travel plans using LLM and user preferences.
  * Retrieves user profile and uses that as preferences in the request to the LLM.
  */
-@ComponentId("travel-planner-agent")
+@Component(id = "travel-planner-agent")
 public class TravelPlannerAgent extends Agent {
 
   private static final String SYSTEM_MESSAGE =
